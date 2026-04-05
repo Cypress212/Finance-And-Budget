@@ -3,115 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Commander MK</title>
+    <title>Smart Ledger MK</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
-            --bg: #e0e5ec; 
-            --shadow: #a3b1c6; 
-            --highlight: #ffffff;
-            --accent: #2d5a27; /* Deep Malawian Green */
+            --bg: #f0f2f5; --card: #ffffff; --accent: #1b5e20; 
+            --text: #1c1e21; --secondary: #65676b; --danger: #d32f2f;
         }
         
         body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            background-color: var(--bg); color: #444; 
-            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--bg); color: var(--text); margin: 0; padding: 15px;
+            padding-bottom: 80px; /* Space for the bottom nav */
         }
 
-        /* The Neumorphic Card Style */
-        .neu-card {
-            background: var(--bg);
-            border-radius: 30px;
-            box-shadow: 9px 9px 16px var(--shadow), -9px -9px 16px var(--highlight);
-            padding: 25px; width: 100%; max-width: 400px; margin-bottom: 25px;
-            box-sizing: border-box;
+        .container { max-width: 450px; margin: 0 auto; }
+
+        .card {
+            background: var(--card); border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 20px; margin-bottom: 15px;
         }
 
-        .total-box { text-align: center; margin-bottom: 10px; }
-        .total-box h1 { font-size: 2.2rem; margin: 5px 0; color: var(--accent); }
+        .header-stats { display: flex; align-items: center; justify-content: space-between; }
+        .balance-value { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
 
-        /* Neumorphic Inputs */
         input, select {
-            width: 100%; border: none; padding: 15px; margin-bottom: 15px;
-            border-radius: 12px; background: var(--bg);
-            box-shadow: inset 6px 6px 12px var(--shadow), inset -6px -6px 12px var(--highlight);
-            color: #444; font-size: 1rem; outline: none; box-sizing: border-box;
+            width: 100%; border: 1.5px solid #ddd; padding: 12px; margin-bottom: 15px;
+            border-radius: 10px; font-size: 1rem; box-sizing: border-box; outline: none;
         }
 
-        /* Neumorphic Button */
-        .btn-push {
-            width: 100%; padding: 18px; border: none; border-radius: 12px;
-            background: var(--bg); color: var(--accent); font-weight: 800;
-            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            cursor: pointer; transition: all 0.2s; text-transform: uppercase;
-        }
-        .btn-push:active {
-            box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight);
-            transform: scale(0.98);
+        .preview-text { font-size: 0.85rem; margin-top: -10px; margin-bottom: 15px; color: var(--secondary); font-style: italic; }
+
+        .btn-record {
+            width: 100%; padding: 16px; border: none; border-radius: 10px;
+            background: var(--accent); color: white; font-weight: bold; font-size: 1rem;
         }
 
-        .history-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px; margin-bottom: 10px; border-radius: 10px;
-            box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
-            background: var(--bg); font-size: 0.9rem;
+        /* BOTTOM NAVIGATION BAR */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--card); display: flex; justify-content: space-around;
+            padding: 15px 0; border-top: 1px solid #ddd; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
-        
-        .chart-wrap { height: 200px; margin-bottom: 20px; }
+
+        .nav-item { border: none; background: none; color: var(--secondary); font-weight: 600; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+
+        /* VIEW TOGGLING */
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .history-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .chart-container { height: 120px; width: 120px; }
     </style>
 </head>
 <body>
 
-    <div class="neu-card total-box">
-        <small style="text-transform: uppercase; letter-spacing: 1px; color: #777;">Balance Spent</small>
-        <h1>MK <span id="totalDisplay">0</span></h1>
-        <div class="chart-wrap">
-            <canvas id="financeChart"></canvas>
+<div class="container">
+    
+    <div id="dashboardView" class="view active">
+        <div class="card">
+            <div class="header-stats">
+                <div>
+                    <div style="font-size:0.8rem; font-weight:bold; color:var(--secondary);">TOTAL SPENT</div>
+                    <div class="balance-value">MK <span id="totalDisplay">0</span></div>
+                </div>
+                <div class="chart-container"><canvas id="miniChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4 style="margin:0 0 15px 0;">Record Transaction</h4>
+            <input type="number" id="amt" placeholder="Enter MK" oninput="showPreview()">
+            <div id="preview" class="preview-text">New Total: MK 0</div>
+            
+            <select id="cat">
+                <option value="Food">Groceries / Food</option>
+                <option value="Transport">Transport / Fuel</option>
+                <option value="Bills">Monthly Bills</option>
+                <option value="Other">Other Sundries</option>
+            </select>
+            <input type="text" id="desc" placeholder="Details (e.g. Minibus)">
+            <button class="btn-record" onclick="saveEntry()">Commit to Ledger</button>
         </div>
     </div>
 
-    <div class="neu-card">
-        <input type="number" id="amt" placeholder="Enter Amount (MK)" inputmode="decimal">
-        <select id="cat">
-            <option value="Food">Groceries / Food</option>
-            <option value="Transport">Transport / Fuel</option>
-            <option value="Bills">Monthly Bills</option>
-            <option value="Fun">Leisure / Fun</option>
-        </select>
-        <input type="text" id="desc" placeholder="Details (e.g. Minibus)">
-        <button class="btn-push" onclick="saveEntry()">Record Entry</button>
+    <div id="historyView" class="view">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h2 style="margin:0;">Full Ledger</h2>
+                <button onclick="clearAllData()" style="color:var(--danger); border:none; background:none; font-weight:bold; cursor:pointer;">WIPE ALL</button>
+            </div>
+            <div id="fullHistory"></div>
+        </div>
     </div>
 
-    <div style="width: 100%; max-width: 400px;">
-        <h3 style="margin-left: 10px; font-size: 0.9rem; color: #777;">RECENT ACTIVITY</h3>
-        <div id="history"></div>
-    </div>
+</div>
+
+<nav class="bottom-nav">
+    <button class="nav-item active" id="btnDash" onclick="switchView('dashboard')">🏠 Dashboard</button>
+    <button class="nav-item" id="btnHist" onclick="switchView('history')">📜 History</button>
+</nav>
 
 <script>
-    let entries = JSON.parse(localStorage.getItem('mw_neu_ledger') || "[]");
+    let entries = JSON.parse(localStorage.getItem('mw_smart_ledger_final') || "[]");
     let chart;
+    let currentGrandTotal = 0;
 
     window.onload = () => {
-        const ctx = document.getElementById('financeChart').getContext('2d');
+        const ctx = document.getElementById('miniChart').getContext('2d');
         chart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Food', 'Transport', 'Bills', 'Fun'],
+                labels: ['Food', 'Transport', 'Bills', 'Other'],
                 datasets: [{
-                    data: [0, 0, 0, 0],
-                    backgroundColor: ['#2d5a27', '#6c757d', '#b19470', '#444'],
-                    borderWidth: 0,
-                    cutout: '80%'
+                    data: [1, 1, 1, 1],
+                    backgroundColor: ['#1b5e20', '#4caf50', '#a5d6a7', '#ced4da'],
+                    borderWidth: 0
                 }]
             },
-            options: { 
-                maintainAspectRatio: false, 
-                plugins: { legend: { display: false } } 
-            }
+            options: { cutout: '75%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
         });
         updateUI();
     };
+
+    function switchView(viewName) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        
+        if(viewName === 'dashboard') {
+            document.getElementById('dashboardView').classList.add('active');
+            document.getElementById('btnDash').classList.add('active');
+        } else {
+            document.getElementById('historyView').classList.add('active');
+            document.getElementById('btnHist').classList.add('active');
+            renderFullHistory();
+        }
+    }
+
+    function showPreview() {
+        const inputVal = parseFloat(document.getElementById('amt').value) || 0;
+        document.getElementById('preview').innerText = `New Total: MK ${(currentGrandTotal + inputVal).toLocaleString()}`;
+    }
 
     function saveEntry() {
         const amt = parseFloat(document.getElementById('amt').value);
@@ -120,35 +156,44 @@
         if (!amt) return;
 
         entries.unshift({ amt, cat, desc, date: new Date().toLocaleDateString() });
-        localStorage.setItem('mw_neu_ledger', JSON.stringify(entries));
-        
+        localStorage.setItem('mw_smart_ledger_final', JSON.stringify(entries));
         document.getElementById('amt').value = '';
         document.getElementById('desc').value = '';
         updateUI();
+        showPreview();
     }
 
     function updateUI() {
-        const totals = { Food: 0, Transport: 0, Bills: 0, Fun: 0 };
-        let grandTotal = 0;
-
+        const totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
+        currentGrandTotal = 0;
         entries.forEach(e => {
             if (totals[e.cat] !== undefined) totals[e.cat] += e.amt;
-            grandTotal += e.amt;
+            currentGrandTotal += e.amt;
         });
-
-        document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
-        chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Fun];
+        document.getElementById('totalDisplay').innerText = currentGrandTotal.toLocaleString();
+        chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Other];
         chart.update();
+    }
 
-        document.getElementById('history').innerHTML = entries.slice(0, 10).map(e => `
-            <div class="history-item">
+    function renderFullHistory() {
+        document.getElementById('fullHistory').innerHTML = entries.length ? entries.map(e => `
+            <div class="history-row">
                 <div>
-                    <strong>${e.desc}</strong><br>
-                    <small style="color:gray;">${e.date}</small>
+                    <div style="font-weight:600;">${e.desc}</div>
+                    <div style="font-size:0.75rem; color:gray;">${e.date} • ${e.cat}</div>
                 </div>
-                <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
+                <div style="font-weight:bold;">MK ${e.amt.toLocaleString()}</div>
             </div>
-        `).join('');
+        `).join('') : '<p style="text-align:center; color:gray;">No records found.</p>';
+    }
+
+    function clearAllData() {
+        if(confirm("This will permanently delete ALL entries. Are you sure?")) {
+            localStorage.removeItem('mw_smart_ledger_final');
+            entries = [];
+            updateUI();
+            renderFullHistory();
+        }
     }
 </script>
 </body>
