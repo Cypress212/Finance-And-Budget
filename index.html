@@ -2,16 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Finance Commander MK</title>
-    <script>if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Offline Mode: Active'))
-            .catch(err => console.log('Offline Mode: Failed', err));
-    });
-}
-</script>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
             --bg: #e0e5ec; 
@@ -23,10 +17,11 @@
         }
         
         body { 
-            font-family: 'Inter', system-ui, sans-serif; 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg); color: #444; 
             margin: 0; padding: 20px; padding-bottom: 100px;
             display: flex; flex-direction: column; align-items: center;
+            overflow-x: hidden;
         }
 
         .neu-card {
@@ -49,6 +44,7 @@
             border-radius: 12px; background: var(--bg);
             box-shadow: inset 6px 6px 12px var(--shadow), inset -6px -6px 12px var(--highlight);
             color: #444; font-size: 1rem; outline: none; box-sizing: border-box;
+            -webkit-appearance: none;
         }
 
         .btn-push {
@@ -63,8 +59,9 @@
             position: fixed; bottom: 20px; display: flex; gap: 20px;
             background: var(--bg); padding: 10px 20px; border-radius: 50px;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            z-index: 100;
         }
-        .nav-btn { border: none; background: none; font-weight: bold; color: #777; cursor: pointer; padding: 10px; }
+        .nav-btn { border: none; background: none; font-weight: bold; color: #777; cursor: pointer; padding: 10px; font-size: 1rem; }
         .nav-btn.active { color: var(--accent); }
 
         .history-item {
@@ -90,19 +87,19 @@
         </div>
 
         <div class="neu-card">
-            <label>Set Monthly Budget Goal (MK)</label>
-            <input type="number" id="monthlyGoal" placeholder="e.g. 300000" oninput="updateUI()">
+            <label>Monthly Budget Goal (MK)</label>
+            <input type="number" id="monthlyGoal" placeholder="Set Goal" oninput="updateUI()">
             
-            <label>New Entry</label>
-            <input type="number" id="amt" placeholder="Amount (MK)">
+            <label>New Record</label>
+            <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
             <select id="cat">
                 <option value="Food">Groceries</option>
                 <option value="Transport">Transport</option>
                 <option value="Bills">Bills</option>
                 <option value="Other">Other</option>
             </select>
-            <input type="text" id="desc" placeholder="Details...">
-            <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
+            <input type="text" id="desc" placeholder="Note (e.g. Minibus)">
+            <button class="btn-push" onclick="saveEntry()">Commit to Ledger</button>
         </div>
     </div>
 
@@ -110,7 +107,7 @@
         <div class="neu-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                 <h3 style="margin:0;">Records</h3>
-                <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; cursor:pointer;">Clear All</button>
+                <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; cursor:pointer;">WIPE</button>
             </div>
             <div id="fullHistory"></div>
         </div>
@@ -121,16 +118,54 @@
         <button class="nav-btn" id="nbHist" onclick="showView('hist')">📜 Ledger</button>
     </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-    // 1. Register Service Worker IMMEDIATELY
+    // OFFLINE SERVICE WORKER REGISTRATION
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+        });
     }
 
-    // 2. Load data from LocalStorage immediately (This works 100% offline)
-    let entries = JSON.parse(localStorage.getItem('mw_final_ledger_v2') || "[]");
+    // DATA INITIALIZATION
+    let entries = JSON.parse(localStorage.getItem('mw_ledger_offline_v1') || "[]");
+    let monthlyGoal = localStorage.getItem('mw_goal_v1') || 0;
+    let chart;
+
+    window.onload = () => {
+        document.getElementById('monthlyGoal').value = monthlyGoal;
+        initChart();
+        updateUI();
+    };
+
+    function initChart() {
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Food', 'Transport', 'Bills', 'Other'],
+                datasets: [{
+                    data: [1,1,1,1],
+                    backgroundColor: ['#2d5a27', '#6c757d', '#b19470', '#444'],
+                    borderWidth: 0
+                }]
+            },
+            options: { cutout: '80%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
+        });
+    }
+
+    function showView(v) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        if(v === 'dash') {
+            document.getElementById('dashView').classList.add('active');
+            document.getElementById('nbDash').classList.add('active');
+            updateUI(); // Refresh calculations
+        } else {
+            document.getElementById('histView').classList.add('active');
+            document.getElementById('nbHist').classList.add('active');
+            renderHistory();
+        }
+    }
 
     function saveEntry() {
         const amtInput = document.getElementById('amt');
@@ -140,7 +175,6 @@
         const amt = parseFloat(amtInput.value);
         if (!amt) return;
 
-        // Create the new entry object
         const newEntry = {
             amt: amt,
             cat: catInput.value,
@@ -148,21 +182,61 @@
             date: new Date().toLocaleDateString()
         };
 
-        // Add to the local array
+        // SAVE LOCALLY (This works offline)
         entries.unshift(newEntry);
-
-        // SAVE TO PHONE MEMORY (This is the offline "Hard Drive")
-        localStorage.setItem('mw_final_ledger_v2', JSON.stringify(entries));
-
-        // Clear UI
+        localStorage.setItem('mw_ledger_offline_v1', JSON.stringify(entries));
+        
+        // Clear Inputs
         amtInput.value = '';
         descInput.value = '';
-
-        // Update the screen
-        updateUI();
         
-        // If we are in the Ledger view, refresh the list
-        if (document.getElementById('histView').classList.contains('active')) {
+        updateUI();
+        alert("Saved Offline!");
+    }
+
+    function updateUI() {
+        const goalInput = document.getElementById('monthlyGoal').value;
+        localStorage.setItem('mw_goal_v1', goalInput);
+        
+        const totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
+        let grandTotal = 0;
+        
+        entries.forEach(e => {
+            if (totals[e.cat] !== undefined) totals[e.cat] += e.amt;
+            grandTotal += e.amt;
+        });
+
+        document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
+        
+        // ALLOWANCE LOGIC
+        const now = new Date();
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysLeft = (lastDay - now.getDate()) + 1;
+        const remainingBudget = goalInput - grandTotal;
+        const dailyAllowance = remainingBudget > 0 ? (remainingBudget / daysLeft) : 0;
+        
+        document.getElementById('dailyLimitDisplay').innerText = Math.floor(dailyAllowance).toLocaleString();
+        
+        if(chart) {
+            chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Other];
+            chart.update();
+        }
+    }
+
+    function renderHistory() {
+        document.getElementById('fullHistory').innerHTML = entries.map(e => `
+            <div class="history-item">
+                <div><strong>${e.desc}</strong><br><small>${e.date}</small></div>
+                <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
+            </div>
+        `).join('') || '<p style="text-align:center;">Empty Ledger</p>';
+    }
+
+    function clearData() {
+        if(confirm("Permanently delete everything?")) {
+            localStorage.removeItem('mw_ledger_offline_v1');
+            entries = [];
+            updateUI();
             renderHistory();
         }
     }
