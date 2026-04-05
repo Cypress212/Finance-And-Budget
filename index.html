@@ -3,12 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wealth Commander MK</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js">if ('serviceWorker' in navigator) {
-
-    navigator.serviceWorker.register('sw.js');
-
-}</script>
+    <title>Commander Ledger</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
             --bg: #e0e5ec; --shadow: #a3b1c6; --highlight: #ffffff;
@@ -24,13 +20,6 @@
             background-color: var(--bg); color: var(--text); 
             margin: 0; padding: 20px; padding-bottom: 100px;
             display: flex; flex-direction: column; align-items: center;
-            transition: background-color 0.3s ease;
-        }
-
-        .theme-toggle {
-            position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%;
-            background: var(--bg); border: none; box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            cursor: pointer; z-index: 1000;
         }
 
         .neu-card {
@@ -44,16 +33,6 @@
         .view.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
-        label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; font-weight: bold; }
-
-        input, select {
-            width: 100%; border: none; padding: 15px; margin-bottom: 15px;
-            border-radius: 12px; background: var(--bg);
-            box-shadow: inset 6px 6px 12px var(--shadow), inset -6px -6px 12px var(--highlight);
-            color: var(--text); font-size: 1rem; outline: none; box-sizing: border-box;
-        }
-
         .btn-push {
             width: 100%; padding: 18px; border: none; border-radius: 12px;
             background: var(--bg); color: var(--accent); font-weight: 800;
@@ -62,13 +41,20 @@
         }
         .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.98); }
 
+        input, select {
+            width: 100%; border: none; padding: 15px; margin-bottom: 15px;
+            border-radius: 12px; background: var(--bg);
+            box-shadow: inset 6px 6px 12px var(--shadow), inset -6px -6px 12px var(--highlight);
+            color: var(--text); outline: none; box-sizing: border-box; font-size: 1rem;
+        }
+
         .nav-bar {
             position: fixed; bottom: 20px; display: flex; gap: 20px;
             background: var(--bg); padding: 10px 20px; border-radius: 50px;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
             z-index: 100;
         }
-        .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; cursor: pointer; padding: 10px; }
+        .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; padding: 10px; cursor: pointer;}
         .nav-btn.active { opacity: 1; color: var(--accent); }
 
         .history-item {
@@ -76,15 +62,32 @@
             border-radius: 15px; background: var(--bg);
             box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
         }
-        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; cursor: pointer; }
+        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; }
+        label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
-
     <div id="dashView" class="view active">
         <div class="neu-card" style="text-align: center; border: 2px solid var(--gold);">
             <label>Daily Allowance Left</label>
-            <div class="allowance-vibe">MK <span id="dailyLimitDisplay">0</span></div>
-            <div id="statusBadge" style="font-size: 0.7rem; font-weight: bold;">
+            <h1 style="color: var(--gold); margin: 5px 0;">MK <span id="dailyDisplay">0</span></h1>
+            <div id="statusBadge" style="font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">Commander Status</div>
+        </div>
+
+        <div class="neu-card">
+            <label>Recording Entry</label>
+            <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
+            <select id="cat">
+                <option value="Food">Groceries</option>
+                <option value="Transport">Transport</option>
+                <option value="Bills">Bills/Escom</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="text" id="desc" placeholder="Details (e.g. Minibus)">
+            
+            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="previewReceipt(this)">
+            <button class="btn-push" style="color:var(--gold); font-size: 0.8rem;" onclick="document.getElementById('cam-input').click()">📸 Snap Receipt</button>
+            <img id="receipt-preview" src="" style="width:100%; border-radius:15px; margin-bottom:15px; display:none;">
+
+            <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
