@@ -1,10 +1,24 @@
-const CACHE_NAME = 'commander-v1';
-const ASSETS = ['./index.html', './manifest.json'];
+const CACHE_NAME = 'ledger-v1';
+const ASSETS = [
+  'finance.html',
+  'manifest.json',
+  'https://cdn.jsdelivr.net/npm/chart.js'
+];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+// Install the Service Worker and Cache the files
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
+    })
+  );
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+// Fetch files from Cache if offline
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
+  );
 });
