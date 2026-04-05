@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Commander MK</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js">if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
+    <script>if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Offline Mode: Active'))
+            .catch(err => console.log('Offline Mode: Failed', err));
+    });
 }
 </script>
     <style>
