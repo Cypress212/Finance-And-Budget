@@ -121,96 +121,48 @@
         <button class="nav-btn" id="nbHist" onclick="showView('hist')">📜 Ledger</button>
     </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-    let entries = JSON.parse(localStorage.getItem('mw_final_ledger_v2') || "[]");
-    let monthlyGoal = localStorage.getItem('mw_goal') || 0;
-    let chart;
-
-    window.onload = () => {
-        document.getElementById('monthlyGoal').value = monthlyGoal;
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        chart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Food', 'Transport', 'Bills', 'Other'],
-                datasets: [{
-                    data: [1,1,1,1],
-                    backgroundColor: ['#2d5a27', '#6c757d', '#b19470', '#444'],
-                    borderWidth: 0
-                }]
-            },
-            options: { cutout: '80%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
-        });
-        updateUI();
-    };
-
-    function showView(v) {
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-        if(v === 'dash') {
-            document.getElementById('dashView').classList.add('active');
-            document.getElementById('nbDash').classList.add('active');
-        } else {
-            document.getElementById('histView').classList.add('active');
-            document.getElementById('nbHist').classList.add('active');
-            renderHistory();
-        }
+    // 1. Register Service Worker IMMEDIATELY
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
     }
+
+    // 2. Load data from LocalStorage immediately (This works 100% offline)
+    let entries = JSON.parse(localStorage.getItem('mw_final_ledger_v2') || "[]");
 
     function saveEntry() {
-        const amt = parseFloat(document.getElementById('amt').value);
-        const cat = document.getElementById('cat').value;
-        const desc = document.getElementById('desc').value || cat;
+        const amtInput = document.getElementById('amt');
+        const catInput = document.getElementById('cat');
+        const descInput = document.getElementById('desc');
+        
+        const amt = parseFloat(amtInput.value);
         if (!amt) return;
 
-        entries.unshift({ amt, cat, desc, date: new Date().toLocaleDateString() });
+        // Create the new entry object
+        const newEntry = {
+            amt: amt,
+            cat: catInput.value,
+            desc: descInput.value || catInput.value,
+            date: new Date().toLocaleDateString()
+        };
+
+        // Add to the local array
+        entries.unshift(newEntry);
+
+        // SAVE TO PHONE MEMORY (This is the offline "Hard Drive")
         localStorage.setItem('mw_final_ledger_v2', JSON.stringify(entries));
-        document.getElementById('amt').value = '';
-        document.getElementById('desc').value = '';
+
+        // Clear UI
+        amtInput.value = '';
+        descInput.value = '';
+
+        // Update the screen
         updateUI();
-    }
-
-    function updateUI() {
-        const goalInput = document.getElementById('monthlyGoal').value;
-        localStorage.setItem('mw_goal', goalInput);
         
-        const totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
-        let grandTotal = 0;
-        
-        entries.forEach(e => {
-            if (totals[e.cat] !== undefined) totals[e.cat] += e.amt;
-            grandTotal += e.amt;
-        });
-
-        document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
-        
-        const now = new Date();
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysLeft = (lastDay - now.getDate()) + 1;
-        
-        const remainingBudget = goalInput - grandTotal;
-        const dailyAllowance = remainingBudget > 0 ? (remainingBudget / daysLeft) : 0;
-        
-        document.getElementById('dailyLimitDisplay').innerText = Math.floor(dailyAllowance).toLocaleString();
-        
-        chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Other];
-        chart.update();
-    }
-
-    function renderHistory() {
-        document.getElementById('fullHistory').innerHTML = entries.map(e => `
-            <div class="history-item">
-                <div><strong>${e.desc}</strong><br><small>${e.date}</small></div>
-                <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
-            </div>
-        `).join('') || '<p style="text-align:center;">No records yet.</p>';
-    }
-
-    function clearData() {
-        if(confirm("Wipe all data?")) {
-            localStorage.removeItem('mw_final_ledger_v2');
-            entries = [];
-            updateUI();
+        // If we are in the Ledger view, refresh the list
+        if (document.getElementById('histView').classList.contains('active')) {
             renderHistory();
         }
     }
