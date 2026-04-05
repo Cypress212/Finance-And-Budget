@@ -25,10 +25,8 @@
         }
 
         .theme-toggle {
-            position: fixed; top: 20px; right: 20px;
-            width: 45px; height: 45px; border-radius: 50%;
-            background: var(--bg); border: none;
-            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%;
+            background: var(--bg); border: none; box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
             cursor: pointer; z-index: 1000;
         }
 
@@ -44,7 +42,21 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
-        label { display: block; font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; }
+        label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; font-weight: bold; }
+
+        /* PROGRESS BAR STYLING */
+        .progress-container {
+            width: 100%; height: 12px; background: var(--bg); border-radius: 10px;
+            box-shadow: inset 3px 3px 6px var(--shadow), inset -3px -3px 6px var(--highlight);
+            margin: 15px 0; overflow: hidden;
+        }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s ease; border-radius: 10px; }
+
+        .status-badge {
+            display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.7rem;
+            font-weight: bold; text-transform: uppercase; margin-top: 10px;
+            box-shadow: 3px 3px 6px var(--shadow), -3px -3px 6px var(--highlight);
+        }
 
         input, select {
             width: 100%; border: none; padding: 15px; margin-bottom: 15px;
@@ -61,19 +73,6 @@
         }
         .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.98); }
 
-        /* CAMERA STYLING */
-        #receipt-preview { 
-            width: 100%; border-radius: 15px; margin-bottom: 15px; display: none;
-            box-shadow: 4px 4px 8px var(--shadow); 
-        }
-
-        /* MONTH PICKER */
-        .month-scroller {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 20px; padding: 10px; border-radius: 15px;
-            box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight);
-        }
-
         .nav-bar {
             position: fixed; bottom: 20px; display: flex; gap: 20px;
             background: var(--bg); padding: 10px 20px; border-radius: 50px;
@@ -88,8 +87,7 @@
             border-radius: 15px; background: var(--bg);
             box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
         }
-        .history-main { display: flex; justify-content: space-between; align-items: center; }
-        .receipt-thumb { width: 100%; height: auto; border-radius: 10px; margin-top: 10px; }
+        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -97,13 +95,23 @@
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
     <div id="dashView" class="view active">
+        
+        <div class="neu-card" style="text-align: center;">
+            <label id="monthProgressLabel">Month Progress</label>
+            <div class="progress-container">
+                <div id="monthProgressFill" class="progress-fill"></div>
+            </div>
+            <div id="daysLeftText" style="font-size: 0.8rem; font-weight: bold;">0 Days to Next Month</div>
+            <div id="statusBadge" class="status-badge">Wealth Commander</div>
+        </div>
+
         <div class="neu-card" style="text-align: center; border: 2px solid var(--gold);">
             <label>Daily Allowance Left</label>
             <div class="allowance-vibe">MK <span id="dailyLimitDisplay">0</span></div>
         </div>
 
         <div class="neu-card" style="text-align: center;">
-            <label>Spent in <span id="currMonthName">Current Month</span></label>
+            <label>Spent in <span id="currMonthName">Month</span></label>
             <h1>MK <span id="totalDisplay">0</span></h1>
             <div style="height: 120px;"><canvas id="mainChart"></canvas></div>
         </div>
@@ -121,16 +129,16 @@
             
             <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="previewReceipt(this)">
             <button class="btn-push" style="color:var(--gold)" onclick="document.getElementById('cam-input').click()">📸 Snap Receipt</button>
-            <img id="receipt-preview" src="">
+            <img id="receipt-preview" src="" style="width:100%; border-radius:15px; margin-bottom:15px; display:none;">
 
-            <button class="btn-push" onclick="saveEntry()">Commit to Ledger</button>
+            <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
             <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.8rem">
         </div>
     </div>
 
     <div id="histView" class="view">
         <div class="neu-card">
-            <div class="month-scroller">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <button class="nav-btn" onclick="changeMonth(-1)" style="opacity:1">◀</button>
                 <div id="displayMonth" style="font-weight:bold; color:var(--accent);">April 2026</div>
                 <button class="nav-btn" onclick="changeMonth(1)" style="opacity:1">▶</button>
@@ -189,56 +197,13 @@
     function previewReceipt(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 receiptData = e.target.result;
-                const preview = document.getElementById('receipt-preview');
-                preview.src = receiptData;
-                preview.style.display = 'block';
+                const p = document.getElementById('receipt-preview');
+                p.src = receiptData; p.style.display = 'block';
             }
             reader.readAsDataURL(input.files[0]);
         }
-    }
-
-    function changeMonth(dir) {
-        viewDate.setMonth(viewDate.getMonth() + dir);
-        renderHistory();
-    }
-
-    function showView(v) {
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-        if(v === 'dash') {
-            document.getElementById('dashView').classList.add('active');
-            document.getElementById('nbDash').classList.add('active');
-            viewDate = new Date();
-            updateUI();
-        } else {
-            document.getElementById('histView').classList.add('active');
-            document.getElementById('nbHist').classList.add('active');
-            renderHistory();
-        }
-    }
-
-    function saveEntry() {
-        const amt = parseFloat(document.getElementById('amt').value);
-        if (!amt) return;
-        const newEntry = {
-            amt: amt,
-            cat: document.getElementById('cat').value,
-            desc: document.getElementById('desc').value || document.getElementById('cat').value,
-            receipt: receiptData,
-            timestamp: new Date().getTime()
-        };
-        entries.unshift(newEntry);
-        localStorage.setItem('mw_pro_ledger_v1', JSON.stringify(entries));
-        
-        // Reset
-        document.getElementById('amt').value = '';
-        document.getElementById('desc').value = '';
-        document.getElementById('receipt-preview').style.display = 'none';
-        receiptData = null;
-        updateUI();
-        alert("Saved to Ledger!");
     }
 
     function updateUI() {
@@ -258,9 +223,28 @@
         document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
         document.getElementById('currMonthName').innerText = months[now.getMonth()];
         
-        const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
-        const dailyAllowance = (goalInput - grandTotal) > 0 ? ((goalInput - grandTotal) / daysLeft) : 0;
+        // PAYDAY / MONTH PROGRESS LOGIC
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const currentDay = now.getDate();
+        const daysLeft = (lastDay - currentDay) + 1;
+        const monthProgress = (currentDay / lastDay) * 100;
+        
+        document.getElementById('monthProgressFill').style.width = monthProgress + "%";
+        document.getElementById('daysLeftText').innerText = `${daysLeft} Days to Next Month`;
+
+        // DAILY ALLOWANCE & STATUS BADGE
+        const remainingBudget = goalInput - grandTotal;
+        const dailyAllowance = remainingBudget > 0 ? (remainingBudget / daysLeft) : 0;
         document.getElementById('dailyLimitDisplay').innerText = Math.floor(dailyAllowance).toLocaleString();
+
+        const badge = document.getElementById('statusBadge');
+        if (remainingBudget < 0) {
+            badge.innerText = "Over Budget"; badge.style.color = "var(--danger)";
+        } else if (dailyAllowance < (goalInput/lastDay) * 0.5) {
+            badge.innerText = "Tactical Saving Mode"; badge.style.color = "var(--gold)";
+        } else {
+            badge.innerText = "Wealth Commander"; badge.style.color = "var(--accent)";
+        }
         
         if(chart) {
             chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Other];
@@ -268,18 +252,48 @@
         }
     }
 
+    function saveEntry() {
+        const amt = parseFloat(document.getElementById('amt').value);
+        if (!amt) return;
+        entries.unshift({
+            amt: amt,
+            cat: document.getElementById('cat').value,
+            desc: document.getElementById('desc').value || document.getElementById('cat').value,
+            receipt: receiptData,
+            timestamp: new Date().getTime()
+        });
+        localStorage.setItem('mw_pro_ledger_v1', JSON.stringify(entries));
+        document.getElementById('amt').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('receipt-preview').style.display = 'none';
+        receiptData = null;
+        updateUI();
+    }
+
+    function showView(v) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        if(v === 'dash') {
+            document.getElementById('dashView').classList.add('active');
+            document.getElementById('nbDash').classList.add('active');
+            updateUI();
+        } else {
+            document.getElementById('histView').classList.add('active');
+            document.getElementById('nbHist').classList.add('active');
+            renderHistory();
+        }
+    }
+
     function renderHistory() {
         const mLabel = months[viewDate.getMonth()] + " " + viewDate.getFullYear();
         document.getElementById('displayMonth').innerText = mLabel;
-
         const filtered = entries.filter(e => {
             let d = new Date(e.timestamp);
             return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
         });
-
         document.getElementById('fullHistory').innerHTML = filtered.map(e => `
             <div class="history-item">
-                <div class="history-main">
+                <div style="display:flex; justify-content:space-between;">
                     <div><strong>${e.desc}</strong><br><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
                     <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
                 </div>
@@ -288,14 +302,8 @@
         `).join('') || `<p style="text-align:center; opacity:0.5;">No records for ${mLabel}</p>`;
     }
 
-    function clearData() {
-        if(confirm("Wipe all records?")) {
-            localStorage.removeItem('mw_pro_ledger_v1');
-            entries = [];
-            updateUI();
-            renderHistory();
-        }
-    }
+    function changeMonth(dir) { viewDate.setMonth(viewDate.getMonth() + dir); renderHistory(); }
+    function clearData() { if(confirm("Wipe all records?")) { localStorage.removeItem('mw_pro_ledger_v1'); entries = []; updateUI(); renderHistory(); } }
 </script>
 </body>
 </html>
