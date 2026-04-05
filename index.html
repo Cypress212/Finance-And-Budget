@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wealth Commander Vault</title>
+    <title>Wealth Commander MK</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -22,13 +22,6 @@
             margin: 0; padding: 20px; padding-bottom: 100px;
             display: flex; flex-direction: column; align-items: center;
             transition: background-color 0.3s ease;
-        }
-
-        /* LOCK SCREEN OVERLAY */
-        #lock-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 9999; display: flex;
-            flex-direction: column; align-items: center; justify-content: center;
         }
 
         .theme-toggle {
@@ -51,6 +44,19 @@
         .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
         label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; font-weight: bold; }
 
+        .progress-container {
+            width: 100%; height: 12px; background: var(--bg); border-radius: 10px;
+            box-shadow: inset 3px 3px 6px var(--shadow), inset -3px -3px 6px var(--highlight);
+            margin: 15px 0; overflow: hidden;
+        }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s ease; border-radius: 10px; }
+
+        .status-badge {
+            display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.7rem;
+            font-weight: bold; text-transform: uppercase; margin-top: 10px;
+            box-shadow: 3px 3px 6px var(--shadow), -3px -3px 6px var(--highlight);
+        }
+
         input, select {
             width: 100%; border: none; padding: 15px; margin-bottom: 15px;
             border-radius: 12px; background: var(--bg);
@@ -62,7 +68,7 @@
             width: 100%; padding: 18px; border: none; border-radius: 12px;
             background: var(--bg); color: var(--accent); font-weight: 800;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            cursor: pointer; text-transform: uppercase; margin-bottom: 10px;
+            cursor: pointer; text-transform: uppercase; margin-bottom: 10px; font-size: 0.8rem;
         }
         .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.98); }
 
@@ -80,27 +86,24 @@
             border-radius: 15px; background: var(--bg);
             box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
         }
-        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; }
+        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; cursor: zoom-in; }
     </style>
 </head>
 <body>
 
-    <div id="lock-screen">
-        <div class="neu-card" style="text-align: center;">
-            <h1 style="color: var(--accent);">Vault Locked</h1>
-            <p style="opacity: 0.7;">Secure Finance Commander</p>
-            <button class="btn-push" onclick="unlockVault()">🔓 Unlock App</button>
-            <p id="lock-msg" style="font-size: 0.8rem; color: var(--danger); margin-top: 10px;"></p>
-        </div>
-    </div>
-
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
     <div id="dashView" class="view active">
+        <div class="neu-card" style="text-align: center;">
+            <label id="monthProgressLabel">Month Progress</label>
+            <div class="progress-container"><div id="monthProgressFill" class="progress-fill"></div></div>
+            <div id="daysLeftText" style="font-size: 0.8rem; font-weight: bold;">-- Days Left</div>
+            <div id="statusBadge" class="status-badge">Commander Status</div>
+        </div>
+
         <div class="neu-card" style="text-align: center; border: 2px solid var(--gold);">
             <label>Daily Allowance Left</label>
             <div class="allowance-vibe">MK <span id="dailyLimitDisplay">0</span></div>
-            <div id="statusBadge" style="font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">Commander Status</div>
         </div>
 
         <div class="neu-card" style="text-align: center;">
@@ -112,21 +115,19 @@
         <div class="neu-card">
             <label>New Entry</label>
             <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
-            
             <select id="cat">
                 <option value="Food">Groceries</option>
                 <option value="Transport">Transport</option>
                 <option value="Bills">Bills</option>
                 <option value="Other">Other</option>
             </select>
-            
-            <input type="text" id="desc" placeholder="Details (e.g. Minibus)">
+            <input type="text" id="desc" placeholder="Details...">
             
             <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="previewReceipt(this)">
-            <button class="btn-push" style="color:var(--gold); font-size: 0.8rem;" onclick="document.getElementById('cam-input').click()">📸 Snap Receipt</button>
+            <button class="btn-push" style="color:var(--gold)" onclick="document.getElementById('cam-input').click()">📸 Snap Receipt</button>
             <img id="receipt-preview" src="" style="width:100%; border-radius:15px; margin-bottom:15px; display:none;">
 
-            <button class="btn-push" onclick="saveEntry()">Save Record</button>
+            <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
             <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.8rem">
         </div>
     </div>
@@ -141,8 +142,8 @@
             <div id="fullHistory"></div>
             
             <hr style="opacity:0.1; margin: 20px 0;">
-            <button class="btn-push" style="font-size:0.7rem;" onclick="exportToCSV()">📤 Export to Excel</button>
-            <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; width:100%; margin-top:10px; font-size:0.7rem;">WIPE ALL DATA</button>
+            <button class="btn-push" style="font-size:0.7rem;" onclick="exportToCSV()">📤 Export to CSV (Excel)</button>
+            <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; width:100%; margin-top:10px; font-size:0.7rem;">WIPE DATA</button>
         </div>
     </div>
 
@@ -152,7 +153,7 @@
     </div>
 
 <script>
-    let entries = JSON.parse(localStorage.getItem('mw_vault_ledger_v2') || "[]");
+    let entries = JSON.parse(localStorage.getItem('mw_pro_ledger_v2') || "[]");
     let monthlyGoal = localStorage.getItem('mw_goal_v1') || 0;
     let currentTheme = localStorage.getItem('theme') || 'light';
     let viewDate = new Date();
@@ -161,22 +162,12 @@
 
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-    async function unlockVault() {
-        // Standard Biometric Check
-        if (!window.isSecureContext || !window.PublicKeyCredential) {
-            document.getElementById('lock-screen').style.display = 'none';
-            return;
-        }
-        document.getElementById('lock-screen').style.display = 'none';
-    }
-
     window.onload = () => {
         document.documentElement.setAttribute('data-theme', currentTheme);
         document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
         document.getElementById('monthlyGoal').value = monthlyGoal;
         initChart();
         updateUI();
-        if (!window.isSecureContext) document.getElementById('lock-screen').style.display = 'none';
     };
 
     function toggleTheme() {
@@ -214,24 +205,6 @@
         }
     }
 
-    function saveEntry() {
-        const amt = parseFloat(document.getElementById('amt').value);
-        if (!amt) return;
-        entries.unshift({
-            amt: amt,
-            cat: document.getElementById('cat').value,
-            desc: document.getElementById('desc').value || document.getElementById('cat').value,
-            receipt: receiptData,
-            timestamp: new Date().getTime()
-        });
-        localStorage.setItem('mw_vault_ledger_v2', JSON.stringify(entries));
-        document.getElementById('amt').value = '';
-        document.getElementById('desc').value = '';
-        document.getElementById('receipt-preview').style.display = 'none';
-        receiptData = null;
-        updateUI();
-    }
-
     function updateUI() {
         const goalInput = document.getElementById('monthlyGoal').value;
         localStorage.setItem('mw_goal_v1', goalInput);
@@ -250,18 +223,66 @@
         document.getElementById('currMonthName').innerText = months[now.getMonth()];
         
         const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysLeft = (lastDay - now.getDate()) + 1;
-        const dailyAllowance = (goalInput - grandTotal) > 0 ? ((goalInput - grandTotal) / daysLeft) : 0;
+        const currentDay = now.getDate();
+        const daysLeft = (lastDay - currentDay) + 1;
+        const monthProgress = (currentDay / lastDay) * 100;
+        
+        document.getElementById('monthProgressFill').style.width = monthProgress + "%";
+        document.getElementById('daysLeftText').innerText = `${daysLeft} Days to Next Month`;
+
+        const remainingBudget = goalInput - grandTotal;
+        const dailyAllowance = remainingBudget > 0 ? (remainingBudget / daysLeft) : 0;
         document.getElementById('dailyLimitDisplay').innerText = Math.floor(dailyAllowance).toLocaleString();
 
         const badge = document.getElementById('statusBadge');
-        badge.innerText = grandTotal > goalInput ? "Over Budget" : "Wealth Commander";
-        badge.style.color = grandTotal > goalInput ? "var(--danger)" : "var(--accent)";
+        if (remainingBudget < 0) {
+            badge.innerText = "Over Budget"; badge.style.color = "var(--danger)";
+        } else if (dailyAllowance < (goalInput/lastDay) * 0.5) {
+            badge.innerText = "Tactical Saving"; badge.style.color = "var(--gold)";
+        } else {
+            badge.innerText = "Wealth Commander"; badge.style.color = "var(--accent)";
+        }
         
         if(chart) {
             chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Other];
             chart.update();
         }
+    }
+
+    function saveEntry() {
+        const amt = parseFloat(document.getElementById('amt').value);
+        if (!amt) return;
+        entries.unshift({
+            amt: amt,
+            cat: document.getElementById('cat').value,
+            desc: document.getElementById('desc').value || document.getElementById('cat').value,
+            receipt: receiptData,
+            timestamp: new Date().getTime()
+        });
+        localStorage.setItem('mw_pro_ledger_v2', JSON.stringify(entries));
+        document.getElementById('amt').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('receipt-preview').style.display = 'none';
+        receiptData = null;
+        updateUI();
+    }
+
+    function exportToCSV() {
+        if (entries.length === 0) return alert("No data to export");
+        let csv = "Date,Description,Category,Amount(MK)\n";
+        entries.forEach(e => {
+            let d = new Date(e.timestamp).toLocaleDateString();
+            csv += `${d},"${e.desc}",${e.cat},${e.amt}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', `Wealth_Ledger_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     function showView(v) {
@@ -297,14 +318,7 @@
     }
 
     function changeMonth(dir) { viewDate.setMonth(viewDate.getMonth() + dir); renderHistory(); }
-    function exportToCSV() {
-        let csv = "Date,Description,Category,Amount\n";
-        entries.forEach(e => csv += `${new Date(e.timestamp).toLocaleDateString()},"${e.desc}",${e.cat},${e.amt}\n`);
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'Ledger_Export.csv'; a.click();
-    }
-    function clearData() { if(confirm("Wipe all records?")) { localStorage.removeItem('mw_vault_ledger_v2'); entries = []; updateUI(); renderHistory(); } }
+    function clearData() { if(confirm("Wipe all records?")) { localStorage.removeItem('mw_pro_ledger_v2'); entries = []; updateUI(); renderHistory(); } }
 </script>
 </body>
 </html>
