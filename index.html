@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Commander MK</title>
+    <title>Wealth Commander MK</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -44,7 +44,6 @@
         .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
         label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; font-weight: bold; }
 
-        /* PROGRESS BAR STYLING */
         .progress-container {
             width: 100%; height: 12px; background: var(--bg); border-radius: 10px;
             box-shadow: inset 3px 3px 6px var(--shadow), inset -3px -3px 6px var(--highlight);
@@ -69,7 +68,7 @@
             width: 100%; padding: 18px; border: none; border-radius: 12px;
             background: var(--bg); color: var(--accent); font-weight: 800;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            cursor: pointer; text-transform: uppercase; margin-bottom: 10px;
+            cursor: pointer; text-transform: uppercase; margin-bottom: 10px; font-size: 0.8rem;
         }
         .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.98); }
 
@@ -87,7 +86,7 @@
             border-radius: 15px; background: var(--bg);
             box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
         }
-        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; }
+        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; cursor: zoom-in; }
     </style>
 </head>
 <body>
@@ -95,14 +94,11 @@
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
     <div id="dashView" class="view active">
-        
         <div class="neu-card" style="text-align: center;">
             <label id="monthProgressLabel">Month Progress</label>
-            <div class="progress-container">
-                <div id="monthProgressFill" class="progress-fill"></div>
-            </div>
-            <div id="daysLeftText" style="font-size: 0.8rem; font-weight: bold;">0 Days to Next Month</div>
-            <div id="statusBadge" class="status-badge">Wealth Commander</div>
+            <div class="progress-container"><div id="monthProgressFill" class="progress-fill"></div></div>
+            <div id="daysLeftText" style="font-size: 0.8rem; font-weight: bold;">-- Days Left</div>
+            <div id="statusBadge" class="status-badge">Commander Status</div>
         </div>
 
         <div class="neu-card" style="text-align: center; border: 2px solid var(--gold);">
@@ -117,7 +113,7 @@
         </div>
 
         <div class="neu-card">
-            <label>Recording Entry</label>
+            <label>New Entry</label>
             <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
             <select id="cat">
                 <option value="Food">Groceries</option>
@@ -140,11 +136,14 @@
         <div class="neu-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <button class="nav-btn" onclick="changeMonth(-1)" style="opacity:1">◀</button>
-                <div id="displayMonth" style="font-weight:bold; color:var(--accent);">April 2026</div>
+                <div id="displayMonth" style="font-weight:bold; color:var(--accent);">Month Year</div>
                 <button class="nav-btn" onclick="changeMonth(1)" style="opacity:1">▶</button>
             </div>
             <div id="fullHistory"></div>
-            <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; width:100%; margin-top:20px;">Wipe History</button>
+            
+            <hr style="opacity:0.1; margin: 20px 0;">
+            <button class="btn-push" style="font-size:0.7rem;" onclick="exportToCSV()">📤 Export to CSV (Excel)</button>
+            <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; width:100%; margin-top:10px; font-size:0.7rem;">WIPE DATA</button>
         </div>
     </div>
 
@@ -154,7 +153,7 @@
     </div>
 
 <script>
-    let entries = JSON.parse(localStorage.getItem('mw_pro_ledger_v1') || "[]");
+    let entries = JSON.parse(localStorage.getItem('mw_pro_ledger_v2') || "[]");
     let monthlyGoal = localStorage.getItem('mw_goal_v1') || 0;
     let currentTheme = localStorage.getItem('theme') || 'light';
     let viewDate = new Date();
@@ -223,7 +222,6 @@
         document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
         document.getElementById('currMonthName').innerText = months[now.getMonth()];
         
-        // PAYDAY / MONTH PROGRESS LOGIC
         const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const currentDay = now.getDate();
         const daysLeft = (lastDay - currentDay) + 1;
@@ -232,7 +230,6 @@
         document.getElementById('monthProgressFill').style.width = monthProgress + "%";
         document.getElementById('daysLeftText').innerText = `${daysLeft} Days to Next Month`;
 
-        // DAILY ALLOWANCE & STATUS BADGE
         const remainingBudget = goalInput - grandTotal;
         const dailyAllowance = remainingBudget > 0 ? (remainingBudget / daysLeft) : 0;
         document.getElementById('dailyLimitDisplay').innerText = Math.floor(dailyAllowance).toLocaleString();
@@ -241,7 +238,7 @@
         if (remainingBudget < 0) {
             badge.innerText = "Over Budget"; badge.style.color = "var(--danger)";
         } else if (dailyAllowance < (goalInput/lastDay) * 0.5) {
-            badge.innerText = "Tactical Saving Mode"; badge.style.color = "var(--gold)";
+            badge.innerText = "Tactical Saving"; badge.style.color = "var(--gold)";
         } else {
             badge.innerText = "Wealth Commander"; badge.style.color = "var(--accent)";
         }
@@ -262,12 +259,30 @@
             receipt: receiptData,
             timestamp: new Date().getTime()
         });
-        localStorage.setItem('mw_pro_ledger_v1', JSON.stringify(entries));
+        localStorage.setItem('mw_pro_ledger_v2', JSON.stringify(entries));
         document.getElementById('amt').value = '';
         document.getElementById('desc').value = '';
         document.getElementById('receipt-preview').style.display = 'none';
         receiptData = null;
         updateUI();
+    }
+
+    function exportToCSV() {
+        if (entries.length === 0) return alert("No data to export");
+        let csv = "Date,Description,Category,Amount(MK)\n";
+        entries.forEach(e => {
+            let d = new Date(e.timestamp).toLocaleDateString();
+            csv += `${d},"${e.desc}",${e.cat},${e.amt}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', `Wealth_Ledger_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     function showView(v) {
@@ -291,19 +306,4 @@
             let d = new Date(e.timestamp);
             return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
         });
-        document.getElementById('fullHistory').innerHTML = filtered.map(e => `
-            <div class="history-item">
-                <div style="display:flex; justify-content:space-between;">
-                    <div><strong>${e.desc}</strong><br><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
-                    <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
-                </div>
-                ${e.receipt ? `<img src="${e.receipt}" class="receipt-thumb">` : ''}
-            </div>
-        `).join('') || `<p style="text-align:center; opacity:0.5;">No records for ${mLabel}</p>`;
-    }
-
-    function changeMonth(dir) { viewDate.setMonth(viewDate.getMonth() + dir); renderHistory(); }
-    function clearData() { if(confirm("Wipe all records?")) { localStorage.removeItem('mw_pro_ledger_v1'); entries = []; updateUI(); renderHistory(); } }
-</script>
-</body>
-</html>
+        document.getElementById('
