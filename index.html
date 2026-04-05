@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Commander Vault PRO</title>
+    <title>Wealth Commander MK</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
@@ -20,14 +20,13 @@
             background-color: var(--bg); color: var(--text); 
             margin: 0; padding: 20px; padding-bottom: 100px;
             display: flex; flex-direction: column; align-items: center;
+            transition: background-color 0.3s ease;
         }
 
-        /* LOCK SCREEN */
-        #lock-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 9999; display: flex;
-            flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease;
+        .theme-toggle {
+            position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%;
+            background: var(--bg); border: none; box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            cursor: pointer; z-index: 1000;
         }
 
         .neu-card {
@@ -38,171 +37,50 @@
         }
 
         .view { display: none; width: 100%; max-width: 400px; }
-        .view.active { display: block; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .btn-push {
-            width: 100%; padding: 18px; border: none; border-radius: 12px;
-            background: var(--bg); color: var(--accent); font-weight: 800;
-            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            cursor: pointer; text-transform: uppercase;
-        }
-        .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); }
+        .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
+        label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; font-weight: bold; }
 
         input, select {
             width: 100%; border: none; padding: 15px; margin-bottom: 15px;
             border-radius: 12px; background: var(--bg);
             box-shadow: inset 6px 6px 12px var(--shadow), inset -6px -6px 12px var(--highlight);
-            color: var(--text); outline: none; box-sizing: border-box;
+            color: var(--text); font-size: 1rem; outline: none; box-sizing: border-box;
         }
+
+        .btn-push {
+            width: 100%; padding: 18px; border: none; border-radius: 12px;
+            background: var(--bg); color: var(--accent); font-weight: 800;
+            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            cursor: pointer; text-transform: uppercase; margin-bottom: 10px;
+        }
+        .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.98); }
 
         .nav-bar {
             position: fixed; bottom: 20px; display: flex; gap: 20px;
             background: var(--bg); padding: 10px 20px; border-radius: 50px;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            z-index: 100;
         }
-        .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; padding: 10px; }
+        .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; cursor: pointer; padding: 10px; }
         .nav-btn.active { opacity: 1; color: var(--accent); }
+
+        .history-item {
+            display: flex; flex-direction: column; padding: 15px; margin-bottom: 12px;
+            border-radius: 15px; background: var(--bg);
+            box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
+        }
+        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="lock-screen">
-        <div class="neu-card" style="text-align: center;">
-            <div style="font-size: 50px; margin-bottom: 10px;">🔒</div>
-            <h2 style="color: var(--accent);">Vault Locked</h2>
-            <p style="opacity: 0.6; font-size: 0.8rem; margin-bottom: 20px;">Use biometrics to access your Malawian wealth commander.</p>
-            <button class="btn-push" onclick="triggerBiometric()">🔓 Unlock with Biometrics</button>
-            <p id="lock-error" style="color: var(--danger); font-size: 0.7rem; margin-top: 15px;"></p>
-        </div>
-    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
     <div id="dashView" class="view active">
-        <div class="neu-card" style="text-align: center;">
-            <label style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7;">Daily Allowance</label>
-            <h1 style="color: var(--gold); margin: 5px 0;">MK <span id="dailyDisplay">0</span></h1>
-        </div>
-
-        <div class="neu-card">
-            <label>New Entry</label>
-            <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
-            <select id="cat">
-                <option value="Food">Food/Groceries</option>
-                <option value="Transport">Transport</option>
-                <option value="Bills">Bills/Escom</option>
-                <option value="Other">Other</option>
-            </select>
-            <input type="text" id="desc" placeholder="Details...">
-            <button class="btn-push" onclick="saveEntry()">Save Entry</button>
-            <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.7rem">
-        </div>
-
-        <div class="neu-card" style="text-align: center;">
-            <label>Monthly Spending</label>
-            <div style="height: 150px;"><canvas id="mainChart"></canvas></div>
-        </div>
-    </div>
-
-    <div class="nav-bar">
-        <button class="nav-btn active">🏠 Home</button>
-        <button class="nav-btn" onclick="alert('Exporting...')">📜 Export</button>
-    </div>
-
-<script>
-    let entries = JSON.parse(localStorage.getItem('mw_vault_data') || "[]");
-    let chart;
-
-    // 🔐 THE BIOMETRIC TRIGGER
-    async function triggerBiometric() {
-        const errorEl = document.getElementById('lock-error');
-        
-        // 1. Check if browser supports WebAuthn
-        if (!window.PublicKeyCredential) {
-            errorEl.innerText = "Biometrics not supported on this browser.";
-            setTimeout(() => document.getElementById('lock-screen').style.display = 'none', 1000);
-            return;
-        }
-
-        try {
-            // This is a "Dummy" credential request. 
-            // On a phone, this FORCES the Fingerprint/FaceID prompt to appear.
-            const options = {
-                publicKey: {
-                    challenge: new Uint8Array([1, 2, 3, 4]), // Random challenge
-                    rp: { name: "Wealth Commander" },
-                    user: { id: new Uint8Array([1]), name: "user", displayName: "User" },
-                    pubKeyCredParams: [{ type: "public-key", alg: -7 }],
-                    timeout: 60000,
-                    authenticatorSelection: { userVerification: "required" }
-                }
-            };
-
-            // This line is what makes the phone vibrate and ask for your fingerprint
-            await navigator.credentials.create(options);
-            
-            // If successful, hide the lock screen
-            document.getElementById('lock-screen').style.opacity = '0';
-            setTimeout(() => document.getElementById('lock-screen').style.display = 'none', 500);
-            
-        } catch (err) {
-            console.error(err);
-            // If the user cancels, or if it's not HTTPS, we show an error.
-            errorEl.innerText = "Security Check Required. (Note: Must use HTTPS/GitHub Pages)";
-            
-            // FOR TESTING ONLY: If you are on a local file, allow bypass after error
-            if (location.protocol !== 'https:') {
-                errorEl.innerText = "🔒 Local mode: Tap again to bypass (HTTPS required for real Fingerprint)";
-                errorEl.onclick = () => document.getElementById('lock-screen').style.display = 'none';
-            }
-        }
-    }
-
-    // --- APP LOGIC ---
-    window.onload = () => {
-        document.getElementById('monthlyGoal').value = localStorage.getItem('mw_goal') || 50000;
-        initChart();
-        updateUI();
-    };
-
-    function initChart() {
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        chart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Food', 'Transport', 'Bills', 'Other'],
-                datasets: [{ data: [1,1,1,1], backgroundColor: ['#2d5a27', '#6c757d', '#b19470', '#333'], borderWidth: 0 }]
-            },
-            options: { cutout: '80%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
-        });
-    }
-
-    function updateUI() {
-        const goal = document.getElementById('monthlyGoal').value;
-        localStorage.setItem('mw_goal', goal);
-        
-        const now = new Date();
-        const filtered = entries.filter(e => new Date(e.ts).getMonth() === now.getMonth());
-        const spent = filtered.reduce((sum, e) => sum + e.amt, 0);
-        
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysLeft = (daysInMonth - now.getDate()) + 1;
-        const daily = (goal - spent) > 0 ? (goal - spent) / daysLeft : 0;
-        
-        document.getElementById('dailyDisplay').innerText = Math.floor(daily).toLocaleString();
-
-        let totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
-        filtered.forEach(e => totals[e.cat] += e.amt);
-        chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Other];
-        chart.update();
-    }
-
-    function saveEntry() {
-        const amt = parseFloat(document.getElementById('amt').value);
-        if (!amt) return;
-        entries.unshift({ amt, cat: document.getElementById('cat').value, desc: document.getElementById('desc').value, ts: new Date().getTime() });
-        localStorage.setItem('mw_vault_data', JSON.stringify(entries));
-        document.getElementById('amt').value = '';
-        updateUI();
-    }
-</script>
-</body>
-</html>
+        <div class="neu-card" style="text-align: center; border: 2px solid var(--gold);">
+            <label>Daily Allowance Left</label>
+            <div class="allowance-vibe">MK <span id="dailyLimitDisplay">0</span></div>
+            <div id="statusBadge" style="font-size: 0.7rem; font-weight: bold;">
