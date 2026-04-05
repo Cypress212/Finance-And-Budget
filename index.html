@@ -7,24 +7,13 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* THEME VARIABLES */
         :root { 
-            --bg: #e0e5ec; 
-            --shadow: #a3b1c6; 
-            --highlight: #ffffff;
-            --accent: #2d5a27;
-            --danger: #d32f2f;
-            --gold: #b19470;
-            --text: #444;
+            --bg: #e0e5ec; --shadow: #a3b1c6; --highlight: #ffffff;
+            --accent: #2d5a27; --danger: #d32f2f; --gold: #b19470; --text: #444;
         }
-
         [data-theme="dark"] {
-            --bg: #1d2126;
-            --shadow: #121519;
-            --highlight: #282d34;
-            --accent: #4caf50;
-            --text: #e0e0e0;
-            --gold: #d4af37;
+            --bg: #1d2126; --shadow: #121519; --highlight: #282d34;
+            --accent: #4caf50; --text: #e0e0e0; --gold: #d4af37;
         }
         
         body { 
@@ -35,30 +24,27 @@
             transition: background-color 0.3s ease;
         }
 
-        /* THEME TOGGLE BUTTON */
         .theme-toggle {
             position: fixed; top: 20px; right: 20px;
             width: 45px; height: 45px; border-radius: 50%;
             background: var(--bg); border: none;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            cursor: pointer; font-size: 1.2rem; z-index: 1000;
-            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 1000;
         }
 
         .neu-card {
             background: var(--bg); border-radius: 30px;
             box-shadow: 9px 9px 16px var(--shadow), -9px -9px 16px var(--highlight);
             padding: 25px; width: 100%; max-width: 400px; margin-bottom: 25px;
-            box-sizing: border-box; transition: all 0.3s ease;
+            box-sizing: border-box;
         }
 
         .view { display: none; width: 100%; max-width: 400px; }
         .view.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        h1 { font-size: 1.8rem; color: var(--accent); margin: 5px 0; }
         .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
-        label { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text); opacity: 0.7; letter-spacing: 1px; margin-bottom: 5px; }
+        label { display: block; font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; }
 
         input, select {
             width: 100%; border: none; padding: 15px; margin-bottom: 15px;
@@ -71,9 +57,22 @@
             width: 100%; padding: 18px; border: none; border-radius: 12px;
             background: var(--bg); color: var(--accent); font-weight: 800;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            cursor: pointer; transition: 0.2s; text-transform: uppercase;
+            cursor: pointer; text-transform: uppercase; margin-bottom: 10px;
         }
         .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.98); }
+
+        /* CAMERA STYLING */
+        #receipt-preview { 
+            width: 100%; border-radius: 15px; margin-bottom: 15px; display: none;
+            box-shadow: 4px 4px 8px var(--shadow); 
+        }
+
+        /* MONTH PICKER */
+        .month-scroller {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px; padding: 10px; border-radius: 15px;
+            box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight);
+        }
 
         .nav-bar {
             position: fixed; bottom: 20px; display: flex; gap: 20px;
@@ -81,14 +80,16 @@
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
             z-index: 100;
         }
-        .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; cursor: pointer; padding: 10px; font-size: 1rem; }
+        .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; cursor: pointer; padding: 10px; }
         .nav-btn.active { opacity: 1; color: var(--accent); }
 
         .history-item {
-            display: flex; justify-content: space-between; padding: 15px; margin-bottom: 12px;
+            display: flex; flex-direction: column; padding: 15px; margin-bottom: 12px;
             border-radius: 15px; background: var(--bg);
             box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
         }
+        .history-main { display: flex; justify-content: space-between; align-items: center; }
+        .receipt-thumb { width: 100%; height: auto; border-radius: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -102,16 +103,13 @@
         </div>
 
         <div class="neu-card" style="text-align: center;">
-            <label>Total Spent This Month</label>
+            <label>Spent in <span id="currMonthName">Current Month</span></label>
             <h1>MK <span id="totalDisplay">0</span></h1>
-            <div style="height: 150px;"><canvas id="mainChart"></canvas></div>
+            <div style="height: 120px;"><canvas id="mainChart"></canvas></div>
         </div>
 
         <div class="neu-card">
-            <label>Monthly Budget Goal (MK)</label>
-            <input type="number" id="monthlyGoal" placeholder="Set Goal" oninput="updateUI()">
-            
-            <label>New Record</label>
+            <label>Recording Entry</label>
             <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
             <select id="cat">
                 <option value="Food">Groceries</option>
@@ -119,18 +117,26 @@
                 <option value="Bills">Bills</option>
                 <option value="Other">Other</option>
             </select>
-            <input type="text" id="desc" placeholder="Note (e.g. Minibus)">
-            <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
+            <input type="text" id="desc" placeholder="Details...">
+            
+            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="previewReceipt(this)">
+            <button class="btn-push" style="color:var(--gold)" onclick="document.getElementById('cam-input').click()">📸 Snap Receipt</button>
+            <img id="receipt-preview" src="">
+
+            <button class="btn-push" onclick="saveEntry()">Commit to Ledger</button>
+            <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.8rem">
         </div>
     </div>
 
     <div id="histView" class="view">
         <div class="neu-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3 style="margin:0;">Ledger</h3>
-                <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; cursor:pointer;">WIPE</button>
+            <div class="month-scroller">
+                <button class="nav-btn" onclick="changeMonth(-1)" style="opacity:1">◀</button>
+                <div id="displayMonth" style="font-weight:bold; color:var(--accent);">April 2026</div>
+                <button class="nav-btn" onclick="changeMonth(1)" style="opacity:1">▶</button>
             </div>
             <div id="fullHistory"></div>
+            <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; width:100%; margin-top:20px;">Wipe History</button>
         </div>
     </div>
 
@@ -140,17 +146,16 @@
     </div>
 
 <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
-    }
-
-    let entries = JSON.parse(localStorage.getItem('mw_ledger_offline_v1') || "[]");
+    let entries = JSON.parse(localStorage.getItem('mw_pro_ledger_v1') || "[]");
     let monthlyGoal = localStorage.getItem('mw_goal_v1') || 0;
     let currentTheme = localStorage.getItem('theme') || 'light';
+    let viewDate = new Date();
+    let receiptData = null;
     let chart;
 
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
     window.onload = () => {
-        // Apply saved theme
         document.documentElement.setAttribute('data-theme', currentTheme);
         document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
         document.getElementById('monthlyGoal').value = monthlyGoal;
@@ -163,11 +168,6 @@
         document.documentElement.setAttribute('data-theme', currentTheme);
         localStorage.setItem('theme', currentTheme);
         document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
-        // Redraw chart to update colors for dark mode
-        if(chart) {
-            chart.options.plugins.legend.labels.color = currentTheme === 'light' ? '#444' : '#e0e0e0';
-            chart.update();
-        }
     }
 
     function initChart() {
@@ -186,12 +186,31 @@
         });
     }
 
+    function previewReceipt(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                receiptData = e.target.result;
+                const preview = document.getElementById('receipt-preview');
+                preview.src = receiptData;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function changeMonth(dir) {
+        viewDate.setMonth(viewDate.getMonth() + dir);
+        renderHistory();
+    }
+
     function showView(v) {
         document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
         if(v === 'dash') {
             document.getElementById('dashView').classList.add('active');
             document.getElementById('nbDash').classList.add('active');
+            viewDate = new Date();
             updateUI();
         } else {
             document.getElementById('histView').classList.add('active');
@@ -207,24 +226,38 @@
             amt: amt,
             cat: document.getElementById('cat').value,
             desc: document.getElementById('desc').value || document.getElementById('cat').value,
-            date: new Date().toLocaleDateString()
+            receipt: receiptData,
+            timestamp: new Date().getTime()
         };
         entries.unshift(newEntry);
-        localStorage.setItem('mw_ledger_offline_v1', JSON.stringify(entries));
+        localStorage.setItem('mw_pro_ledger_v1', JSON.stringify(entries));
+        
+        // Reset
         document.getElementById('amt').value = '';
         document.getElementById('desc').value = '';
+        document.getElementById('receipt-preview').style.display = 'none';
+        receiptData = null;
         updateUI();
+        alert("Saved to Ledger!");
     }
 
     function updateUI() {
         const goalInput = document.getElementById('monthlyGoal').value;
         localStorage.setItem('mw_goal_v1', goalInput);
+        const now = new Date();
+        
+        let filtered = entries.filter(e => {
+            let d = new Date(e.timestamp);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
+
         let totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
         let grandTotal = 0;
-        entries.forEach(e => { totals[e.cat] += e.amt; grandTotal += e.amt; });
+        filtered.forEach(e => { totals[e.cat] += e.amt; grandTotal += e.amt; });
+
         document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
+        document.getElementById('currMonthName').innerText = months[now.getMonth()];
         
-        const now = new Date();
         const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
         const dailyAllowance = (goalInput - grandTotal) > 0 ? ((goalInput - grandTotal) / daysLeft) : 0;
         document.getElementById('dailyLimitDisplay').innerText = Math.floor(dailyAllowance).toLocaleString();
@@ -236,17 +269,28 @@
     }
 
     function renderHistory() {
-        document.getElementById('fullHistory').innerHTML = entries.map(e => `
+        const mLabel = months[viewDate.getMonth()] + " " + viewDate.getFullYear();
+        document.getElementById('displayMonth').innerText = mLabel;
+
+        const filtered = entries.filter(e => {
+            let d = new Date(e.timestamp);
+            return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
+        });
+
+        document.getElementById('fullHistory').innerHTML = filtered.map(e => `
             <div class="history-item">
-                <div><strong>${e.desc}</strong><br><small>${e.date}</small></div>
-                <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
+                <div class="history-main">
+                    <div><strong>${e.desc}</strong><br><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
+                    <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
+                </div>
+                ${e.receipt ? `<img src="${e.receipt}" class="receipt-thumb">` : ''}
             </div>
-        `).join('') || '<p style="text-align:center;">Empty</p>';
+        `).join('') || `<p style="text-align:center; opacity:0.5;">No records for ${mLabel}</p>`;
     }
 
     function clearData() {
         if(confirm("Wipe all records?")) {
-            localStorage.removeItem('mw_ledger_offline_v1');
+            localStorage.removeItem('mw_pro_ledger_v1');
             entries = [];
             updateUI();
             renderHistory();
