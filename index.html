@@ -7,6 +7,7 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* THEME VARIABLES */
         :root { 
             --bg: #e0e5ec; 
             --shadow: #a3b1c6; 
@@ -14,21 +15,41 @@
             --accent: #2d5a27;
             --danger: #d32f2f;
             --gold: #b19470;
+            --text: #444;
+        }
+
+        [data-theme="dark"] {
+            --bg: #1d2126;
+            --shadow: #121519;
+            --highlight: #282d34;
+            --accent: #4caf50;
+            --text: #e0e0e0;
+            --gold: #d4af37;
         }
         
         body { 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-            background-color: var(--bg); color: #444; 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background-color: var(--bg); color: var(--text); 
             margin: 0; padding: 20px; padding-bottom: 100px;
             display: flex; flex-direction: column; align-items: center;
-            overflow-x: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        /* THEME TOGGLE BUTTON */
+        .theme-toggle {
+            position: fixed; top: 20px; right: 20px;
+            width: 45px; height: 45px; border-radius: 50%;
+            background: var(--bg); border: none;
+            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            cursor: pointer; font-size: 1.2rem; z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
         }
 
         .neu-card {
             background: var(--bg); border-radius: 30px;
             box-shadow: 9px 9px 16px var(--shadow), -9px -9px 16px var(--highlight);
             padding: 25px; width: 100%; max-width: 400px; margin-bottom: 25px;
-            box-sizing: border-box;
+            box-sizing: border-box; transition: all 0.3s ease;
         }
 
         .view { display: none; width: 100%; max-width: 400px; }
@@ -37,14 +58,13 @@
 
         h1 { font-size: 1.8rem; color: var(--accent); margin: 5px 0; }
         .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
-        label { display: block; font-size: 0.75rem; text-transform: uppercase; color: #777; letter-spacing: 1px; margin-bottom: 5px; }
+        label { display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text); opacity: 0.7; letter-spacing: 1px; margin-bottom: 5px; }
 
         input, select {
             width: 100%; border: none; padding: 15px; margin-bottom: 15px;
             border-radius: 12px; background: var(--bg);
             box-shadow: inset 6px 6px 12px var(--shadow), inset -6px -6px 12px var(--highlight);
-            color: #444; font-size: 1rem; outline: none; box-sizing: border-box;
-            -webkit-appearance: none;
+            color: var(--text); font-size: 1rem; outline: none; box-sizing: border-box;
         }
 
         .btn-push {
@@ -61,8 +81,8 @@
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
             z-index: 100;
         }
-        .nav-btn { border: none; background: none; font-weight: bold; color: #777; cursor: pointer; padding: 10px; font-size: 1rem; }
-        .nav-btn.active { color: var(--accent); }
+        .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; cursor: pointer; padding: 10px; font-size: 1rem; }
+        .nav-btn.active { opacity: 1; color: var(--accent); }
 
         .history-item {
             display: flex; justify-content: space-between; padding: 15px; margin-bottom: 12px;
@@ -73,11 +93,12 @@
 </head>
 <body>
 
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
+
     <div id="dashView" class="view active">
         <div class="neu-card" style="text-align: center; border: 2px solid var(--gold);">
             <label>Daily Allowance Left</label>
             <div class="allowance-vibe">MK <span id="dailyLimitDisplay">0</span></div>
-            <small style="color:#777">Based on remaining days</small>
         </div>
 
         <div class="neu-card" style="text-align: center;">
@@ -99,14 +120,14 @@
                 <option value="Other">Other</option>
             </select>
             <input type="text" id="desc" placeholder="Note (e.g. Minibus)">
-            <button class="btn-push" onclick="saveEntry()">Commit to Ledger</button>
+            <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
         </div>
     </div>
 
     <div id="histView" class="view">
         <div class="neu-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3 style="margin:0;">Records</h3>
+                <h3 style="margin:0;">Ledger</h3>
                 <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; cursor:pointer;">WIPE</button>
             </div>
             <div id="fullHistory"></div>
@@ -119,23 +140,35 @@
     </div>
 
 <script>
-    // OFFLINE SERVICE WORKER REGISTRATION
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
-        });
+        window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
     }
 
-    // DATA INITIALIZATION
     let entries = JSON.parse(localStorage.getItem('mw_ledger_offline_v1') || "[]");
     let monthlyGoal = localStorage.getItem('mw_goal_v1') || 0;
+    let currentTheme = localStorage.getItem('theme') || 'light';
     let chart;
 
     window.onload = () => {
+        // Apply saved theme
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
         document.getElementById('monthlyGoal').value = monthlyGoal;
         initChart();
         updateUI();
     };
+
+    function toggleTheme() {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        localStorage.setItem('theme', currentTheme);
+        document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
+        // Redraw chart to update colors for dark mode
+        if(chart) {
+            chart.options.plugins.legend.labels.color = currentTheme === 'light' ? '#444' : '#e0e0e0';
+            chart.update();
+        }
+    }
 
     function initChart() {
         const ctx = document.getElementById('mainChart').getContext('2d');
@@ -145,7 +178,7 @@
                 labels: ['Food', 'Transport', 'Bills', 'Other'],
                 datasets: [{
                     data: [1,1,1,1],
-                    backgroundColor: ['#2d5a27', '#6c757d', '#b19470', '#444'],
+                    backgroundColor: ['#2d5a27', '#6c757d', '#b19470', '#333'],
                     borderWidth: 0
                 }]
             },
@@ -159,7 +192,7 @@
         if(v === 'dash') {
             document.getElementById('dashView').classList.add('active');
             document.getElementById('nbDash').classList.add('active');
-            updateUI(); // Refresh calculations
+            updateUI();
         } else {
             document.getElementById('histView').classList.add('active');
             document.getElementById('nbHist').classList.add('active');
@@ -168,53 +201,32 @@
     }
 
     function saveEntry() {
-        const amtInput = document.getElementById('amt');
-        const catInput = document.getElementById('cat');
-        const descInput = document.getElementById('desc');
-        
-        const amt = parseFloat(amtInput.value);
+        const amt = parseFloat(document.getElementById('amt').value);
         if (!amt) return;
-
         const newEntry = {
             amt: amt,
-            cat: catInput.value,
-            desc: descInput.value || catInput.value,
+            cat: document.getElementById('cat').value,
+            desc: document.getElementById('desc').value || document.getElementById('cat').value,
             date: new Date().toLocaleDateString()
         };
-
-        // SAVE LOCALLY (This works offline)
         entries.unshift(newEntry);
         localStorage.setItem('mw_ledger_offline_v1', JSON.stringify(entries));
-        
-        // Clear Inputs
-        amtInput.value = '';
-        descInput.value = '';
-        
+        document.getElementById('amt').value = '';
+        document.getElementById('desc').value = '';
         updateUI();
-        alert("Saved Offline!");
     }
 
     function updateUI() {
         const goalInput = document.getElementById('monthlyGoal').value;
         localStorage.setItem('mw_goal_v1', goalInput);
-        
-        const totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
+        let totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
         let grandTotal = 0;
-        
-        entries.forEach(e => {
-            if (totals[e.cat] !== undefined) totals[e.cat] += e.amt;
-            grandTotal += e.amt;
-        });
-
+        entries.forEach(e => { totals[e.cat] += e.amt; grandTotal += e.amt; });
         document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
         
-        // ALLOWANCE LOGIC
         const now = new Date();
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysLeft = (lastDay - now.getDate()) + 1;
-        const remainingBudget = goalInput - grandTotal;
-        const dailyAllowance = remainingBudget > 0 ? (remainingBudget / daysLeft) : 0;
-        
+        const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
+        const dailyAllowance = (goalInput - grandTotal) > 0 ? ((goalInput - grandTotal) / daysLeft) : 0;
         document.getElementById('dailyLimitDisplay').innerText = Math.floor(dailyAllowance).toLocaleString();
         
         if(chart) {
@@ -229,11 +241,11 @@
                 <div><strong>${e.desc}</strong><br><small>${e.date}</small></div>
                 <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
             </div>
-        `).join('') || '<p style="text-align:center;">Empty Ledger</p>';
+        `).join('') || '<p style="text-align:center;">Empty</p>';
     }
 
     function clearData() {
-        if(confirm("Permanently delete everything?")) {
+        if(confirm("Wipe all records?")) {
             localStorage.removeItem('mw_ledger_offline_v1');
             entries = [];
             updateUI();
