@@ -3,126 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Money Commander</title>
+    <title>Finance Commander</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #10b981; --warn: #f59e0b; --danger: #ef4444; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        :root { --bg: #0b0f1a; --glass: rgba(30, 41, 59, 0.7); --accent: #10b981; --text: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 50px; }
         
-        .glass { background: var(--card); padding: 20px; border-radius: 16px; margin-bottom: 20px; border: 1px solid #334155; }
+        .card { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
         
-        /* The Visual Budget Bar */
-        .progress-container { background: #334155; height: 25px; border-radius: 12px; overflow: hidden; margin: 15px 0; }
-        #progressBar { height: 100%; width: 0%; background: var(--accent); transition: width 0.5s ease, background 0.5s; }
+        /* The Chart Container */
+        .chart-container { position: relative; height: 250px; width: 100%; margin-bottom: 10px; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        input, select { background: #0f172a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .stat-box { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; text-align: center; }
         
-        button { background: var(--accent); border: none; color: white; padding: 15px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; }
-        button:active { transform: scale(0.98); }
+        input, select { width: 100%; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; color: white; padding: 14px; border-radius: 12px; margin-bottom: 10px; font-size: 1rem; box-sizing: border-box; }
         
-        .transaction { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #334155; }
-        .amt { font-weight: bold; }
+        .btn-add { background: var(--accent); border: none; color: white; padding: 16px; border-radius: 12px; font-weight: 800; width: 100%; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: transform 0.1s; }
+        .btn-add:active { transform: scale(0.96); }
+
+        .transaction-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div class="glass">
-        <h2 style="margin:0;">Monthly Budget</h2>
-        <div style="display:flex; justify-content:space-between; margin-top:10px;">
-            <span>Spent: $<span id="totalSpent">0</span></span>
-            <span>Limit: $<span id="displayLimit">1000</span></span>
+    <div class="card">
+        <h2 style="margin:0 0 15px 0; font-size: 1.2rem; opacity: 0.8;">Spending Breakdown</h2>
+        <div class="chart-container">
+            <canvas id="spendingChart"></canvas>
         </div>
-        <div class="progress-container">
-            <div id="progressBar"></div>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <small>Total Spent</small>
+                <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent);">$<span id="totalDisplay">0</span></div>
+            </div>
+            <div class="stat-box">
+                <small>Daily Avg</small>
+                <div style="font-size: 1.3rem; font-weight: 700;">$<span id="avgDisplay">0</span></div>
+            </div>
         </div>
-        <input type="number" id="setLimit" placeholder="Set Monthly Limit" onchange="updateLimit(this.value)" style="margin-top:10px;">
     </div>
 
-    <div class="glass">
-        <h3>Add Expense</h3>
-        <div class="grid">
-            <input type="number" id="amount" placeholder="Amount ($)">
-            <select id="category">
-                <option value="🍔 Food">Food</option>
-                <option value="🚗 Transport">Transport</option>
-                <option value="🏠 Bills">Bills</option>
-                <option value="🎉 Fun">Fun</option>
+    <div class="card">
+        <h3 style="margin-top:0;">Log Purchase</h3>
+        <div style="display:flex; gap:10px;">
+            <input type="number" id="amt" placeholder="Amount ($)" inputmode="decimal">
+            <select id="cat">
+                <option value="Food">🍔 Food</option>
+                <option value="Bills">🏠 Bills</option>
+                <option value="Fun">🎉 Fun</option>
+                <option value="Other">📦 Other</option>
             </select>
         </div>
-        <input type="text" id="desc" placeholder="What did you buy?" style="margin-bottom:10px;">
-        <button onclick="addExpense()">Log Expense</button>
+        <input type="text" id="desc" placeholder="What did you buy?">
+        <button class="btn-add" onclick="saveTransaction()">ADD TRANSACTION</button>
     </div>
 
-    <div class="glass">
-        <h3>History</h3>
-        <div id="history"></div>
-        <button onclick="clearFinances()" style="background:var(--danger); margin-top:20px; font-size:0.8rem; padding:8px;">Reset All Data</button>
+    <div class="card">
+        <h3 style="margin-top:0;">History</h3>
+        <div id="historyList"></div>
     </div>
 
 <script>
-    let budgetLimit = localStorage.getItem('budgetLimit') || 1000;
-    let expenses = JSON.parse(localStorage.getItem('expenses') || "[]");
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+    let transactions = JSON.parse(localStorage.getItem('my_money') || "[]");
+    let myChart;
 
     window.onload = () => {
-        document.getElementById('displayLimit').innerText = budgetLimit;
+        initChart();
         updateUI();
     };
 
-    function updateLimit(val) {
-        budgetLimit = val;
-        localStorage.setItem('budgetLimit', val);
-        document.getElementById('displayLimit').innerText = val;
-        updateUI();
+    function initChart() {
+        const ctx = document.getElementById('spendingChart').getContext('2d');
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Food', 'Bills', 'Fun', 'Other'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                cutout: '70%',
+                plugins: { legend: { position: 'bottom', labels: { color: '#f8fafc', padding: 20 } } },
+                maintainAspectRatio: false
+            }
+        });
     }
 
-    function addExpense() {
-        const amt = parseFloat(document.getElementById('amount').value);
-        const cat = document.getElementById('category').value;
-        const desc = document.getElementById('desc').value;
+    function saveTransaction() {
+        const amt = parseFloat(document.getElementById('amt').value);
+        const cat = document.getElementById('cat').value;
+        const desc = document.getElementById('desc').value || cat;
 
         if (!amt) return;
 
-        expenses.unshift({ amt, cat, desc, date: new Date().toLocaleDateString() });
-        localStorage.setItem('expenses', JSON.stringify(expenses));
+        transactions.unshift({ amt, cat, desc, date: new Date().toLocaleDateString() });
+        localStorage.setItem('my_money', JSON.stringify(transactions));
         
-        // Clear inputs
-        document.getElementById('amount').value = '';
+        document.getElementById('amt').value = '';
         document.getElementById('desc').value = '';
         updateUI();
     }
 
     function updateUI() {
-        const total = expenses.reduce((sum, item) => sum + item.amt, 0);
-        document.getElementById('totalSpent').innerText = total.toFixed(2);
+        const totals = { Food: 0, Bills: 0, Fun: 0, Other: 0 };
+        let grandTotal = 0;
 
-        // Update Progress Bar
-        const percent = Math.min((total / budgetLimit) * 100, 100);
-        const bar = document.getElementById('progressBar');
-        bar.style.width = percent + "%";
+        transactions.forEach(t => {
+            totals[t.cat] += t.amt;
+            grandTotal += t.amt;
+        });
 
-        // Color Logic
-        if (percent > 90) bar.style.background = "var(--danger)";
-        else if (percent > 70) bar.style.background = "var(--warn)";
-        else bar.style.background = "var(--accent)";
+        document.getElementById('totalDisplay').innerText = grandTotal.toFixed(2);
+        document.getElementById('avgDisplay').innerText = (grandTotal / 30).toFixed(2);
 
-        // Render History
-        document.getElementById('history').innerHTML = expenses.map(e => `
-            <div class="transaction">
-                <div>
-                    <div>${e.cat} - ${e.desc}</div>
-                    <small style="color:#888">${e.date}</small>
-                </div>
-                <div class="amt">-$${e.amt.toFixed(2)}</div>
+        // Update Chart smoothly
+        myChart.data.datasets[0].data = [totals.Food, totals.Bills, totals.Fun, totals.Other];
+        myChart.update();
+
+        // Render List
+        document.getElementById('historyList').innerHTML = transactions.slice(0, 5).map(t => `
+            <div class="transaction-item">
+                <span>${t.desc}</span>
+                <span style="font-weight:700">-$${t.amt.toFixed(2)}</span>
             </div>
         `).join('');
-    }
-
-    function clearFinances() {
-        if(confirm("Delete all financial history?")) {
-            localStorage.removeItem('expenses');
-            expenses = [];
-            updateUI();
-        }
     }
 </script>
 </body>
