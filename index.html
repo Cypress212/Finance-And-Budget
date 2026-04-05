@@ -3,118 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Wealth Ledger</title>
+    <title>MW Wealth Tracker</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
-            --paper: #f4f1ea; --ink: #1a1a1a; --border: #c2b280; 
-            --accent: #2c5e50; --danger: #8b0000; 
+            --gold: #c2b280; --dark-green: #1b3022; 
+            --paper: #fdfdfd; --text: #1a1a1a; 
         }
         
         body { 
-            font-family: 'Georgia', serif; background-color: #dcd0c0; 
-            color: var(--ink); margin: 0; padding: 20px; line-height: 1.6;
+            font-family: 'Georgia', serif; background-color: #f0f0f0; 
+            color: var(--text); margin: 0; padding: 0;
         }
 
-        .ledger-container {
-            max-width: 500px; margin: 0 auto; background: var(--paper);
-            border: 2px solid var(--border); box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
-            padding: 30px; border-radius: 2px;
+        /* Top Dashboard - High Visibility */
+        .header-dash {
+            background: var(--dark-green); color: white;
+            padding: 40px 20px; text-align: center;
+            border-bottom: 4px solid var(--gold);
         }
 
-        h1, h2, h3 { 
-            text-align: center; text-transform: uppercase; 
-            letter-spacing: 2px; border-bottom: 2px solid var(--border);
-            padding-bottom: 10px; margin-bottom: 20px;
+        .total-amount { font-size: 2.8rem; font-weight: bold; margin: 10px 0; }
+        .currency-label { color: var(--gold); font-size: 1rem; text-transform: uppercase; }
+
+        .content-container { max-width: 600px; margin: -20px auto 0; padding: 0 15px; }
+
+        .card { 
+            background: var(--paper); border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 20px; margin-bottom: 20px;
         }
 
-        /* Chart Styling */
-        .chart-box { 
-            background: white; border: 1px solid var(--border); 
-            padding: 15px; margin-bottom: 25px; height: 250px;
-        }
-
-        /* Input Fields - The "Stationery" look */
+        /* Input Area */
+        h3 { border-bottom: 1px solid var(--gold); padding-bottom: 5px; margin-bottom: 15px; }
+        
         input, select {
-            width: 100%; padding: 12px; margin-bottom: 15px;
-            background: transparent; border: none;
-            border-bottom: 1px solid var(--border);
-            font-family: 'Georgia', serif; font-size: 1rem;
-            box-sizing: border-box; outline: none;
+            width: 100%; padding: 15px; margin-bottom: 10px;
+            border: 1px solid #ddd; border-radius: 4px;
+            font-family: 'Georgia', serif; font-size: 1.1rem;
+            box-sizing: border-box; background: #fff;
         }
 
-        input:focus { border-bottom: 2px solid var(--accent); }
-
-        /* The "Seal" Button */
-        .btn-log {
-            background: var(--accent); color: var(--paper);
-            border: none; padding: 15px; width: 100%;
-            font-weight: bold; text-transform: uppercase;
-            letter-spacing: 1px; cursor: pointer;
-            transition: background 0.3s;
+        .btn-save {
+            background: var(--gold); color: var(--dark-green);
+            border: none; padding: 18px; width: 100%;
+            font-weight: bold; font-size: 1.1rem; cursor: pointer;
+            text-transform: uppercase; border-radius: 4px;
         }
-        .btn-log:hover { background: #1e4036; }
 
-        /* Transaction List - Styled like an old receipt */
-        .history-list { margin-top: 30px; font-size: 0.9rem; }
-        .entry {
-            display: flex; justify-content: space-between;
-            border-bottom: 1px dashed var(--border);
-            padding: 8px 0;
+        /* History List */
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 0; border-bottom: 1px solid #eee;
         }
-        .entry-amt { font-weight: bold; color: var(--danger); }
+        .amt-red { color: #8b0000; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="ledger-container">
-        <h1>Wealth Ledger</h1>
+    <div class="header-dash">
+        <div class="currency-label">Total Expenditure</div>
+        <div class="total-amount">MK <span id="totalDisplay">0</span></div>
+        <div style="height: 180px; margin-top: 20px;">
+            <canvas id="financeChart"></canvas>
+        </div>
+    </div>
 
-        <div class="chart-box">
-            <canvas id="classicChart"></canvas>
+    <div class="content-container">
+        <div class="card">
+            <h3>Log Transaction</h3>
+            <input type="number" id="amt" placeholder="Amount (Kwacha)" inputmode="decimal">
+            <select id="cat">
+                <option value="Food">Provisions (Food)</option>
+                <option value="Transport">Transport / Fuel</option>
+                <option value="Bills">Monthly Bills</option>
+                <option value="Leisure">Leisure / Fun</option>
+            </select>
+            <input type="text" id="desc" placeholder="Details (e.g. Minibus, Groceries)">
+            <button class="btn-save" onclick="saveEntry()">Record in Ledger</button>
         </div>
 
-        <div style="text-align: center; margin-bottom: 25px;">
-            <small>Current Total Expenditure</small>
-            <div style="font-size: 2rem; font-weight: bold;">$<span id="totalDisplay">0.00</span></div>
+        <div class="card">
+            <h3>Recent Records</h3>
+            <div id="history"></div>
+            <button onclick="clearData()" style="background:transparent; color:gray; border:none; margin-top:10px; cursor:pointer; width:100%;">Clear All Records</button>
         </div>
-
-        <h3>Log New Entry</h3>
-        <input type="number" id="amt" placeholder="Amount ($)" inputmode="decimal">
-        <select id="cat">
-            <option value="Food">Provisions (Food)</option>
-            <option value="Bills">Obligations (Bills)</option>
-            <option value="Fun">Leisure (Fun)</option>
-            <option value="Other">Sundries (Other)</option>
-        </select>
-        <input type="text" id="desc" placeholder="Memorandum (Description)">
-        <button class="btn-log" onclick="saveEntry()">Commit to Ledger</button>
-
-        <div class="history-list" id="history">
-            </div>
     </div>
 
 <script>
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
-
-    let entries = JSON.parse(localStorage.getItem('classic_ledger') || "[]");
-    let ledgerChart;
+    let entries = JSON.parse(localStorage.getItem('mw_ledger') || "[]");
+    let chart;
 
     window.onload = () => {
-        const ctx = document.getElementById('classicChart').getContext('2d');
-        ledgerChart = new Chart(ctx, {
-            type: 'pie',
+        const ctx = document.getElementById('financeChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'doughnut',
             data: {
-                labels: ['Food', 'Bills', 'Fun', 'Other'],
+                labels: ['Food', 'Transport', 'Bills', 'Leisure'],
                 datasets: [{
                     data: [0, 0, 0, 0],
-                    backgroundColor: ['#2c5e50', '#4a4a4a', '#8b0000', '#c2b280'],
-                    borderColor: '#f4f1ea',
-                    borderWidth: 2
+                    backgroundColor: ['#c2b280', '#e5e5e5', '#4a6741', '#1b3022'],
+                    borderWidth: 0
                 }]
             },
-            options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            options: { 
+                maintainAspectRatio: false, 
+                plugins: { legend: { display: true, labels: { color: 'white' } } } 
+            }
         });
         updateUI();
     };
@@ -126,7 +122,7 @@
         if (!amt) return;
 
         entries.unshift({ amt, cat, desc, date: new Date().toLocaleDateString() });
-        localStorage.setItem('classic_ledger', JSON.stringify(entries));
+        localStorage.setItem('mw_ledger', JSON.stringify(entries));
         
         document.getElementById('amt').value = '';
         document.getElementById('desc').value = '';
@@ -134,24 +130,36 @@
     }
 
     function updateUI() {
-        const totals = { Food: 0, Bills: 0, Fun: 0, Other: 0 };
+        const totals = { Food: 0, Transport: 0, Bills: 0, Leisure: 0 };
         let grandTotal = 0;
 
         entries.forEach(e => {
-            totals[e.cat] += e.amt;
+            if (totals[e.cat] !== undefined) totals[e.cat] += e.amt;
             grandTotal += e.amt;
         });
 
-        document.getElementById('totalDisplay').innerText = grandTotal.toFixed(2);
-        ledgerChart.data.datasets[0].data = [totals.Food, totals.Bills, totals.Fun, totals.Other];
-        ledgerChart.update();
+        document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
+        
+        chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Leisure];
+        chart.update();
 
-        document.getElementById('history').innerHTML = entries.slice(0, 10).map(e => `
-            <div class="entry">
-                <span>${e.date} | ${e.desc}</span>
-                <span class="entry-amt">-$${e.amt.toFixed(2)}</span>
+        document.getElementById('history').innerHTML = entries.slice(0, 15).map(e => `
+            <div class="history-item">
+                <div>
+                    <strong>${e.desc}</strong><br>
+                    <small style="color:gray;">${e.date}</small>
+                </div>
+                <div class="amt-red">-MK ${e.amt.toLocaleString()}</div>
             </div>
         `).join('');
+    }
+
+    function clearData() {
+        if(confirm("Wipe all ledger entries?")) {
+            localStorage.removeItem('mw_ledger');
+            entries = [];
+            updateUI();
+        }
     }
 </script>
 </body>
