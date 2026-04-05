@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Commander Vault PRO</title>
+    <title>Wealth Commander Vault</title>
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
@@ -20,13 +21,20 @@
             background-color: var(--bg); color: var(--text); 
             margin: 0; padding: 20px; padding-bottom: 100px;
             display: flex; flex-direction: column; align-items: center;
+            transition: background-color 0.3s ease;
         }
 
-        /* LOCK SCREEN */
+        /* LOCK SCREEN OVERLAY */
         #lock-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg); z-index: 9999; display: flex;
             flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .theme-toggle {
+            position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%;
+            background: var(--bg); border: none; box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            cursor: pointer; z-index: 1000;
         }
 
         .neu-card {
@@ -37,7 +45,18 @@
         }
 
         .view { display: none; width: 100%; max-width: 400px; }
-        .view.active { display: block; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
+        label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; font-weight: bold; }
+
+        input, select {
+            width: 100%; border: none; padding: 15px; margin-bottom: 15px;
+            border-radius: 12px; background: var(--bg);
+            box-shadow: inset 6px 6px 12px var(--shadow), inset -6px -6px 12px var(--highlight);
+            color: var(--text); font-size: 1rem; outline: none; box-sizing: border-box;
+        }
 
         .btn-push {
             width: 100%; padding: 18px; border: none; border-radius: 12px;
@@ -45,21 +64,15 @@
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
             cursor: pointer; text-transform: uppercase; margin-bottom: 10px;
         }
-        .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); }
-
-        input, select {
-            width: 100%; border: none; padding: 15px; margin-bottom: 15px;
-            border-radius: 12px; background: var(--bg);
-            box-shadow: inset 6px 6px 12px var(--shadow), inset -6px -6px 12px var(--highlight);
-            color: var(--text); outline: none; box-sizing: border-box; font-size: 1rem;
-        }
+        .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.98); }
 
         .nav-bar {
             position: fixed; bottom: 20px; display: flex; gap: 20px;
             background: var(--bg); padding: 10px 20px; border-radius: 50px;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            z-index: 100;
         }
-        .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; padding: 10px; cursor: pointer;}
+        .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; cursor: pointer; padding: 10px; }
         .nav-btn.active { opacity: 1; color: var(--accent); }
 
         .history-item {
@@ -74,42 +87,47 @@
 
     <div id="lock-screen">
         <div class="neu-card" style="text-align: center;">
-            <div style="font-size: 50px; margin-bottom: 10px;">🔒</div>
-            <h2 style="color: var(--accent);">Vault Locked</h2>
-            <p style="opacity: 0.6; font-size: 0.8rem; margin-bottom: 20px;">Use biometrics to access your commander ledger.</p>
-            <button class="btn-push" onclick="triggerBiometric()">🔓 Unlock App</button>
-            <div id="lock-error" style="color: var(--danger); font-size: 0.7rem; margin-top: 15px;"></div>
+            <h1 style="color: var(--accent);">Vault Locked</h1>
+            <p style="opacity: 0.7;">Secure Finance Commander</p>
+            <button class="btn-push" onclick="unlockVault()">🔓 Unlock App</button>
+            <p id="lock-msg" style="font-size: 0.8rem; color: var(--danger); margin-top: 10px;"></p>
         </div>
     </div>
 
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
+
     <div id="dashView" class="view active">
         <div class="neu-card" style="text-align: center; border: 2px solid var(--gold);">
-            <label style="font-size: 0.7rem; opacity: 0.7;">Daily Allowance Left</label>
-            <h1 style="color: var(--gold); margin: 5px 0;">MK <span id="dailyDisplay">0</span></h1>
-        </div>
-
-        <div class="neu-card">
-            <label>Recording Entry</label>
-            <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
-            <select id="cat">
-                <option value="Food">Groceries</option>
-                <option value="Transport">Transport</option>
-                <option value="Bills">Bills/Escom</option>
-                <option value="Other">Other</option>
-            </select>
-            <input type="text" id="desc" placeholder="Details...">
-            
-            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="previewReceipt(this)">
-            <button class="btn-push" style="color:var(--gold); font-size:0.8rem;" onclick="document.getElementById('cam-input').click()">📸 Snap Receipt</button>
-            <img id="receipt-preview" src="" style="width:100%; border-radius:15px; margin-bottom:15px; display:none;">
-
-            <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
-            <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.7rem">
+            <label>Daily Allowance Left</label>
+            <div class="allowance-vibe">MK <span id="dailyLimitDisplay">0</span></div>
+            <div id="statusBadge" style="font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">Commander Status</div>
         </div>
 
         <div class="neu-card" style="text-align: center;">
-            <label>Spent: <span id="totalDisplay">0</span> / Goal</label>
+            <label>Spent in <span id="currMonthName">Month</span></label>
+            <h1>MK <span id="totalDisplay">0</span></h1>
             <div style="height: 120px;"><canvas id="mainChart"></canvas></div>
+        </div>
+
+        <div class="neu-card">
+            <label>New Entry</label>
+            <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
+            
+            <select id="cat">
+                <option value="Food">Groceries</option>
+                <option value="Transport">Transport</option>
+                <option value="Bills">Bills</option>
+                <option value="Other">Other</option>
+            </select>
+            
+            <input type="text" id="desc" placeholder="Details (e.g. Minibus)">
+            
+            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="previewReceipt(this)">
+            <button class="btn-push" style="color:var(--gold); font-size: 0.8rem;" onclick="document.getElementById('cam-input').click()">📸 Snap Receipt</button>
+            <img id="receipt-preview" src="" style="width:100%; border-radius:15px; margin-bottom:15px; display:none;">
+
+            <button class="btn-push" onclick="saveEntry()">Save Record</button>
+            <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.8rem">
         </div>
     </div>
 
@@ -121,7 +139,10 @@
                 <button class="nav-btn" onclick="changeMonth(1)" style="opacity:1">▶</button>
             </div>
             <div id="fullHistory"></div>
-            <button class="btn-push" style="font-size:0.7rem; margin-top:20px;" onclick="exportToCSV()">📤 Export to Excel</button>
+            
+            <hr style="opacity:0.1; margin: 20px 0;">
+            <button class="btn-push" style="font-size:0.7rem;" onclick="exportToCSV()">📤 Export to Excel</button>
+            <button onclick="clearData()" style="color:var(--danger); border:none; background:none; font-weight:bold; width:100%; margin-top:10px; font-size:0.7rem;">WIPE ALL DATA</button>
         </div>
     </div>
 
@@ -131,53 +152,39 @@
     </div>
 
 <script>
-    let entries = JSON.parse(localStorage.getItem('mw_final_vault_v1') || "[]");
+    let entries = JSON.parse(localStorage.getItem('mw_vault_ledger_v2') || "[]");
+    let monthlyGoal = localStorage.getItem('mw_goal_v1') || 0;
+    let currentTheme = localStorage.getItem('theme') || 'light';
     let viewDate = new Date();
     let receiptData = null;
     let chart;
 
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-    // 🔐 BIOMETRIC HANDLER
-    async function triggerBiometric() {
-        const errorEl = document.getElementById('lock-error');
-        const isSecure = window.isSecureContext && window.PublicKeyCredential;
-
-        if (!isSecure) {
-            errorEl.innerHTML = `<span style="color:var(--text)">⚠️ Secure context (HTTPS) missing.</span><br>
-                                <button onclick="unlockApp()" class="btn-push" style="margin-top:10px; font-size:0.7rem;">DEBUG UNLOCK</button>`;
+    async function unlockVault() {
+        // Standard Biometric Check
+        if (!window.isSecureContext || !window.PublicKeyCredential) {
+            document.getElementById('lock-screen').style.display = 'none';
             return;
         }
-
-        try {
-            const options = {
-                publicKey: {
-                    challenge: new Uint8Array([1, 2, 3, 4]),
-                    rp: { name: "Wealth Commander" },
-                    user: { id: new Uint8Array([1]), name: "user", displayName: "User" },
-                    pubKeyCredParams: [{ type: "public-key", alg: -7 }],
-                    timeout: 10000,
-                    authenticatorSelection: { userVerification: "required" }
-                }
-            };
-            await navigator.credentials.create(options);
-            unlockApp();
-        } catch (err) {
-            errorEl.innerHTML = `Verification failed.<br>
-                                <button onclick="unlockApp()" style="background:none; border:none; color:var(--accent); font-weight:bold; cursor:pointer; margin-top:10px;">FORCE BYPASS</button>`;
-        }
-    }
-
-    function unlockApp() {
         document.getElementById('lock-screen').style.display = 'none';
     }
 
-    // --- APP CORE ---
     window.onload = () => {
-        document.getElementById('monthlyGoal').value = localStorage.getItem('mw_goal') || 50000;
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
+        document.getElementById('monthlyGoal').value = monthlyGoal;
         initChart();
         updateUI();
+        if (!window.isSecureContext) document.getElementById('lock-screen').style.display = 'none';
     };
+
+    function toggleTheme() {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        localStorage.setItem('theme', currentTheme);
+        document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
+    }
 
     function initChart() {
         const ctx = document.getElementById('mainChart').getContext('2d');
@@ -185,7 +192,11 @@
             type: 'doughnut',
             data: {
                 labels: ['Food', 'Transport', 'Bills', 'Other'],
-                datasets: [{ data: [1,1,1,1], backgroundColor: ['#2d5a27', '#6c757d', '#b19470', '#333'], borderWidth: 0 }]
+                datasets: [{
+                    data: [1,1,1,1],
+                    backgroundColor: ['#2d5a27', '#6c757d', '#b19470', '#333'],
+                    borderWidth: 0
+                }]
             },
             options: { cutout: '80%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
         });
@@ -196,50 +207,61 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 receiptData = e.target.result;
-                document.getElementById('receipt-preview').src = receiptData;
-                document.getElementById('receipt-preview').style.display = 'block';
+                const p = document.getElementById('receipt-preview');
+                p.src = receiptData; p.style.display = 'block';
             }
             reader.readAsDataURL(input.files[0]);
         }
-    }
-
-    function updateUI() {
-        const goal = document.getElementById('monthlyGoal').value;
-        localStorage.setItem('mw_goal', goal);
-        const now = new Date();
-        const filtered = entries.filter(e => new Date(e.ts).getMonth() === now.getMonth());
-        const spent = filtered.reduce((sum, e) => sum + e.amt, 0);
-        
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysLeft = (lastDay - now.getDate()) + 1;
-        const daily = (goal - spent) > 0 ? (goal - spent) / daysLeft : 0;
-        
-        document.getElementById('dailyDisplay').innerText = Math.floor(daily).toLocaleString();
-        document.getElementById('totalDisplay').innerText = spent.toLocaleString();
-
-        let totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
-        filtered.forEach(e => totals[e.cat] += e.amt);
-        chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Other];
-        chart.update();
     }
 
     function saveEntry() {
         const amt = parseFloat(document.getElementById('amt').value);
         if (!amt) return;
         entries.unshift({
-            amt, 
-            cat: document.getElementById('cat').value, 
-            desc: document.getElementById('desc').value || document.getElementById('cat').value, 
-            ts: new Date().getTime(),
-            receipt: receiptData
+            amt: amt,
+            cat: document.getElementById('cat').value,
+            desc: document.getElementById('desc').value || document.getElementById('cat').value,
+            receipt: receiptData,
+            timestamp: new Date().getTime()
         });
-        localStorage.setItem('mw_final_vault_v1', JSON.stringify(entries));
+        localStorage.setItem('mw_vault_ledger_v2', JSON.stringify(entries));
         document.getElementById('amt').value = '';
         document.getElementById('desc').value = '';
         document.getElementById('receipt-preview').style.display = 'none';
         receiptData = null;
         updateUI();
-        alert("Committed to Ledger");
+    }
+
+    function updateUI() {
+        const goalInput = document.getElementById('monthlyGoal').value;
+        localStorage.setItem('mw_goal_v1', goalInput);
+        const now = new Date();
+        
+        let filtered = entries.filter(e => {
+            let d = new Date(e.timestamp);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
+
+        let totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
+        let grandTotal = 0;
+        filtered.forEach(e => { totals[e.cat] += e.amt; grandTotal += e.amt; });
+
+        document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
+        document.getElementById('currMonthName').innerText = months[now.getMonth()];
+        
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysLeft = (lastDay - now.getDate()) + 1;
+        const dailyAllowance = (goalInput - grandTotal) > 0 ? ((goalInput - grandTotal) / daysLeft) : 0;
+        document.getElementById('dailyLimitDisplay').innerText = Math.floor(dailyAllowance).toLocaleString();
+
+        const badge = document.getElementById('statusBadge');
+        badge.innerText = grandTotal > goalInput ? "Over Budget" : "Wealth Commander";
+        badge.style.color = grandTotal > goalInput ? "var(--danger)" : "var(--accent)";
+        
+        if(chart) {
+            chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Other];
+            chart.update();
+        }
     }
 
     function showView(v) {
@@ -257,30 +279,32 @@
     }
 
     function renderHistory() {
-        document.getElementById('displayMonth').innerText = months[viewDate.getMonth()] + " " + viewDate.getFullYear();
+        const mLabel = months[viewDate.getMonth()] + " " + viewDate.getFullYear();
+        document.getElementById('displayMonth').innerText = mLabel;
         const filtered = entries.filter(e => {
-            let d = new Date(e.ts);
+            let d = new Date(e.timestamp);
             return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
         });
         document.getElementById('fullHistory').innerHTML = filtered.map(e => `
             <div class="history-item">
                 <div style="display:flex; justify-content:space-between;">
-                    <div><strong>${e.desc}</strong><br><small>${new Date(e.ts).toLocaleDateString()}</small></div>
+                    <div><strong>${e.desc}</strong><br><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
                     <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
                 </div>
-                ${e.receipt ? `<img src="${e.receipt}" class="receipt-thumb">` : ''}
+                ${e.receipt ? `<img src="${e.receipt}" class="receipt-thumb" onclick="window.open(this.src)">` : ''}
             </div>
-        `).join('') || `<p style="text-align:center; opacity:0.5;">No records for this month.</p>`;
+        `).join('') || `<p style="text-align:center; opacity:0.5;">No records for ${mLabel}</p>`;
     }
 
     function changeMonth(dir) { viewDate.setMonth(viewDate.getMonth() + dir); renderHistory(); }
-    
     function exportToCSV() {
         let csv = "Date,Description,Category,Amount\n";
-        entries.forEach(e => csv += `${new Date(e.ts).toLocaleDateString()},"${e.desc}",${e.cat},${e.amt}\n`);
+        entries.forEach(e => csv += `${new Date(e.timestamp).toLocaleDateString()},"${e.desc}",${e.cat},${e.amt}\n`);
         const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Vault_Ledger.csv'; a.click();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'Ledger_Export.csv'; a.click();
     }
+    function clearData() { if(confirm("Wipe all records?")) { localStorage.removeItem('mw_vault_ledger_v2'); entries = []; updateUI(); renderHistory(); } }
 </script>
 </body>
 </html>
