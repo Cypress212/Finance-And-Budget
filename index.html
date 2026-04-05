@@ -306,4 +306,19 @@
             let d = new Date(e.timestamp);
             return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
         });
-        document.getElementById('
+        document.getElementById('fullHistory').innerHTML = filtered.map(e => `
+            <div class="history-item">
+                <div style="display:flex; justify-content:space-between;">
+                    <div><strong>${e.desc}</strong><br><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
+                    <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
+                </div>
+                ${e.receipt ? `<img src="${e.receipt}" class="receipt-thumb" onclick="window.open(this.src)">` : ''}
+            </div>
+        `).join('') || `<p style="text-align:center; opacity:0.5;">No records for ${mLabel}</p>`;
+    }
+
+    function changeMonth(dir) { viewDate.setMonth(viewDate.getMonth() + dir); renderHistory(); }
+    function clearData() { if(confirm("Wipe all records?")) { localStorage.removeItem('mw_pro_ledger_v2'); entries = []; updateUI(); renderHistory(); } }
+</script>
+</body>
+</html>
