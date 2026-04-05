@@ -3,96 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MW Wealth Tracker</title>
-    <link rel="manifest" href="manifest.json">
+    <title>Finance Commander MK</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
-            --gold: #c2b280; --dark-green: #1b3022; 
-            --paper: #fdfdfd; --text: #1a1a1a; 
+            --bg: #e0e5ec; 
+            --shadow: #a3b1c6; 
+            --highlight: #ffffff;
+            --accent: #2d5a27; /* Deep Malawian Green */
         }
         
         body { 
-            font-family: 'Georgia', serif; background-color: #f0f0f0; 
-            color: var(--text); margin: 0; padding: 0;
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background-color: var(--bg); color: #444; 
+            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;
         }
 
-        /* Top Dashboard - High Visibility */
-        .header-dash {
-            background: var(--dark-green); color: white;
-            padding: 40px 20px; text-align: center;
-            border-bottom: 4px solid var(--gold);
+        /* The Neumorphic Card Style */
+        .neu-card {
+            background: var(--bg);
+            border-radius: 30px;
+            box-shadow: 9px 9px 16px var(--shadow), -9px -9px 16px var(--highlight);
+            padding: 25px; width: 100%; max-width: 400px; margin-bottom: 25px;
+            box-sizing: border-box;
         }
 
-        .total-amount { font-size: 2.8rem; font-weight: bold; margin: 10px 0; }
-        .currency-label { color: var(--gold); font-size: 1rem; text-transform: uppercase; }
+        .total-box { text-align: center; margin-bottom: 10px; }
+        .total-box h1 { font-size: 2.2rem; margin: 5px 0; color: var(--accent); }
 
-        .content-container { max-width: 600px; margin: -20px auto 0; padding: 0 15px; }
-
-        .card { 
-            background: var(--paper); border-radius: 8px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            padding: 20px; margin-bottom: 20px;
-        }
-
-        /* Input Area */
-        h3 { border-bottom: 1px solid var(--gold); padding-bottom: 5px; margin-bottom: 15px; }
-        
+        /* Neumorphic Inputs */
         input, select {
-            width: 100%; padding: 15px; margin-bottom: 10px;
-            border: 1px solid #ddd; border-radius: 4px;
-            font-family: 'Georgia', serif; font-size: 1.1rem;
-            box-sizing: border-box; background: #fff;
+            width: 100%; border: none; padding: 15px; margin-bottom: 15px;
+            border-radius: 12px; background: var(--bg);
+            box-shadow: inset 6px 6px 12px var(--shadow), inset -6px -6px 12px var(--highlight);
+            color: #444; font-size: 1rem; outline: none; box-sizing: border-box;
         }
 
-        .btn-save {
-            background: var(--gold); color: var(--dark-green);
-            border: none; padding: 18px; width: 100%;
-            font-weight: bold; font-size: 1.1rem; cursor: pointer;
-            text-transform: uppercase; border-radius: 4px;
+        /* Neumorphic Button */
+        .btn-push {
+            width: 100%; padding: 18px; border: none; border-radius: 12px;
+            background: var(--bg); color: var(--accent); font-weight: 800;
+            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+        }
+        .btn-push:active {
+            box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight);
+            transform: scale(0.98);
         }
 
-        /* History List */
         .history-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 0; border-bottom: 1px solid #eee;
+            padding: 12px; margin-bottom: 10px; border-radius: 10px;
+            box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
+            background: var(--bg); font-size: 0.9rem;
         }
-        .amt-red { color: #8b0000; font-weight: bold; }
+        
+        .chart-wrap { height: 200px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="header-dash">
-        <div class="currency-label">Total Expenditure</div>
-        <div class="total-amount">MK <span id="totalDisplay">0</span></div>
-        <div style="height: 180px; margin-top: 20px;">
+    <div class="neu-card total-box">
+        <small style="text-transform: uppercase; letter-spacing: 1px; color: #777;">Balance Spent</small>
+        <h1>MK <span id="totalDisplay">0</span></h1>
+        <div class="chart-wrap">
             <canvas id="financeChart"></canvas>
         </div>
     </div>
 
-    <div class="content-container">
-        <div class="card">
-            <h3>Log Transaction</h3>
-            <input type="number" id="amt" placeholder="Amount (Kwacha)" inputmode="decimal">
-            <select id="cat">
-                <option value="Food">Provisions (Food)</option>
-                <option value="Transport">Transport / Fuel</option>
-                <option value="Bills">Monthly Bills</option>
-                <option value="Leisure">Leisure / Fun</option>
-            </select>
-            <input type="text" id="desc" placeholder="Details (e.g. Minibus, Groceries)">
-            <button class="btn-save" onclick="saveEntry()">Record in Ledger</button>
-        </div>
+    <div class="neu-card">
+        <input type="number" id="amt" placeholder="Enter Amount (MK)" inputmode="decimal">
+        <select id="cat">
+            <option value="Food">Groceries / Food</option>
+            <option value="Transport">Transport / Fuel</option>
+            <option value="Bills">Monthly Bills</option>
+            <option value="Fun">Leisure / Fun</option>
+        </select>
+        <input type="text" id="desc" placeholder="Details (e.g. Minibus)">
+        <button class="btn-push" onclick="saveEntry()">Record Entry</button>
+    </div>
 
-        <div class="card">
-            <h3>Recent Records</h3>
-            <div id="history"></div>
-            <button onclick="clearData()" style="background:transparent; color:gray; border:none; margin-top:10px; cursor:pointer; width:100%;">Clear All Records</button>
-        </div>
+    <div style="width: 100%; max-width: 400px;">
+        <h3 style="margin-left: 10px; font-size: 0.9rem; color: #777;">RECENT ACTIVITY</h3>
+        <div id="history"></div>
     </div>
 
 <script>
-    let entries = JSON.parse(localStorage.getItem('mw_ledger') || "[]");
+    let entries = JSON.parse(localStorage.getItem('mw_neu_ledger') || "[]");
     let chart;
 
     window.onload = () => {
@@ -100,16 +97,17 @@
         chart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Food', 'Transport', 'Bills', 'Leisure'],
+                labels: ['Food', 'Transport', 'Bills', 'Fun'],
                 datasets: [{
                     data: [0, 0, 0, 0],
-                    backgroundColor: ['#c2b280', '#e5e5e5', '#4a6741', '#1b3022'],
-                    borderWidth: 0
+                    backgroundColor: ['#2d5a27', '#6c757d', '#b19470', '#444'],
+                    borderWidth: 0,
+                    cutout: '80%'
                 }]
             },
             options: { 
                 maintainAspectRatio: false, 
-                plugins: { legend: { display: true, labels: { color: 'white' } } } 
+                plugins: { legend: { display: false } } 
             }
         });
         updateUI();
@@ -122,7 +120,7 @@
         if (!amt) return;
 
         entries.unshift({ amt, cat, desc, date: new Date().toLocaleDateString() });
-        localStorage.setItem('mw_ledger', JSON.stringify(entries));
+        localStorage.setItem('mw_neu_ledger', JSON.stringify(entries));
         
         document.getElementById('amt').value = '';
         document.getElementById('desc').value = '';
@@ -130,7 +128,7 @@
     }
 
     function updateUI() {
-        const totals = { Food: 0, Transport: 0, Bills: 0, Leisure: 0 };
+        const totals = { Food: 0, Transport: 0, Bills: 0, Fun: 0 };
         let grandTotal = 0;
 
         entries.forEach(e => {
@@ -139,27 +137,18 @@
         });
 
         document.getElementById('totalDisplay').innerText = grandTotal.toLocaleString();
-        
-        chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Leisure];
+        chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Fun];
         chart.update();
 
-        document.getElementById('history').innerHTML = entries.slice(0, 15).map(e => `
+        document.getElementById('history').innerHTML = entries.slice(0, 10).map(e => `
             <div class="history-item">
                 <div>
                     <strong>${e.desc}</strong><br>
                     <small style="color:gray;">${e.date}</small>
                 </div>
-                <div class="amt-red">-MK ${e.amt.toLocaleString()}</div>
+                <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
             </div>
         `).join('');
-    }
-
-    function clearData() {
-        if(confirm("Wipe all ledger entries?")) {
-            localStorage.removeItem('mw_ledger');
-            entries = [];
-            updateUI();
-        }
     }
 </script>
 </body>
