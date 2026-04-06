@@ -63,19 +63,23 @@
         .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.97); }
         .btn-checkout { background: var(--accent); color: white !important; margin-top: 15px; }
 
-        #basketList { overflow-y: auto; max-height: 350px; }
-        .basket-item {
+        #basketList, #paidHistory { overflow-y: auto; }
+        #basketList { max-height: 300px; }
+        #paidHistory { max-height: 250px; }
+
+        .item-row {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; border-radius: 20px; background: var(--bg);
+            padding: 12px; border-radius: 15px; background: var(--bg);
             box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
-            margin-bottom: 12px;
+            margin-bottom: 10px; font-size: 0.85rem;
         }
 
         .remove-btn {
             background: var(--bg); border: none; color: var(--danger); font-weight: 900;
-            width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
-            box-shadow: 3px 3px 6px var(--shadow), -3px -3px 6px var(--highlight);
+            width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+            box-shadow: 2px 2px 5px var(--shadow), -2px -2px 5px var(--highlight);
             display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-left: 10px;
         }
 
         .theme-toggle { 
@@ -112,7 +116,7 @@
 </div>
 
 <div class="column">
-    <div class="neu-card" style="display: flex; flex-direction: column;">
+    <div class="neu-card" style="display: flex; flex-direction: column; min-height: 400px;">
         <label>Live Basket Tally <span id="basketCount" style="float:right; color:var(--accent)">0 Items</span></label>
         <div id="basketTotal" style="font-size: 2rem; font-weight: 800; margin: 15px 0;">MK 0</div>
         <div id="basketList"></div>
@@ -127,16 +131,16 @@
     <div class="neu-card">
         <label>Monthly Paid Total</label>
         <div style="font-size: 1.8rem; font-weight: 900; color: var(--accent);">MK <span id="totalPaid">0</span></div>
-        <div style="height: 200px; margin-top: 20px;"><canvas id="mainChart"></canvas></div>
+        <div style="height: 180px; margin-top: 20px;"><canvas id="mainChart"></canvas></div>
     </div>
-    <div class="neu-card" style="max-height: 300px; overflow-y: auto;">
-        <label>Paid History (Recent)</label>
-        <div id="paidHistory" style="font-size: 0.85rem;"></div>
+    <div class="neu-card">
+        <label>Paid History (Ledger)</label>
+        <div id="paidHistory"></div>
+        <button class="btn-push" id="clearHistoryBtn" style="color:var(--danger); font-size: 0.7rem; margin-top: 15px; border-radius: 10px; display:none;" onclick="clearHistory()">🗑️ Wipe All History</button>
     </div>
 </div>
 
 <script>
-    // --- SERVICE WORKER REGISTRATION ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));`;
@@ -147,7 +151,7 @@
 
     function autoExpand(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
 
-    let entries = JSON.parse(localStorage.getItem('commander_ledger_v11') || "[]");
+    let entries = JSON.parse(localStorage.getItem('commander_ledger_v12') || "[]");
     let basket = [];
     let currentTheme = localStorage.getItem('commander_theme') || 'light';
     let chart;
@@ -178,14 +182,33 @@
 
     function removeFromBasket(id) { basket = basket.filter(i => i.id !== id); updateUI(); }
 
+    function removeFromHistory(id) {
+        if(confirm("Delete this entry from history?")) {
+            entries = entries.filter(e => e.id !== id);
+            saveAndRefresh();
+        }
+    }
+
     function clearBasket() { if(confirm("Empty basket?")) { basket = []; updateUI(); } }
+
+    function clearHistory() {
+        if(confirm("⚠️ This will wipe your entire month's data. Proceed?")) {
+            entries = [];
+            saveAndRefresh();
+        }
+    }
+
+    function saveAndRefresh() {
+        localStorage.setItem('commander_ledger_v12', JSON.stringify(entries));
+        updateUI();
+    }
 
     function checkout() {
         basket.forEach(i => entries.unshift({ ...i, timestamp: Date.now() }));
-        localStorage.setItem('commander_ledger_v11', JSON.stringify(entries));
+        saveAndRefresh();
         basket = [];
         updateUI();
-        alert("Transaction Recorded.");
+        alert("Mission Confirmed.");
     }
 
     function updateUI() {
@@ -203,18 +226,22 @@
         document.getElementById('basketCount').innerText = basket.length;
         document.getElementById('overLimitMsg').style.display = daily < 0 ? 'block' : 'none';
         document.getElementById('checkoutBtn').style.display = basket.length > 0 ? 'block' : 'none';
+        document.getElementById('clearHistoryBtn').style.display = entries.length > 0 ? 'block' : 'none';
 
+        // Render Basket
         document.getElementById('basketList').innerHTML = basket.map(i => `
-            <div class="basket-item">
+            <div class="item-row">
                 <div style="flex:1;"><b>${i.desc}</b><br>MK ${i.amt.toLocaleString()}</div>
                 <button class="remove-btn" onclick="removeFromBasket(${i.id})">✕</button>
             </div>
-        `).join('');
+        `).join('') || '<p style="text-align:center; opacity:0.3; margin-top:20px;">Basket Empty</p>';
 
-        document.getElementById('paidHistory').innerHTML = paidThisMonth.slice(0, 5).map(e => `
-            <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(0,0,0,0.05)">
-                <span>${e.desc}</span><b>MK ${e.amt.toLocaleString()}</b>
-            </div>`).join('');
+        // Render History
+        document.getElementById('paidHistory').innerHTML = paidThisMonth.slice(0, 10).map(e => `
+            <div class="item-row" style="box-shadow: none; border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 0;">
+                <div style="flex:1;"><span>${e.desc}</span><br><b>MK ${e.amt.toLocaleString()}</b></div>
+                <button class="remove-btn" style="box-shadow: none; font-size: 0.6rem;" onclick="removeFromHistory(${e.id})">✕</button>
+            </div>`).join('') || '<p style="text-align:center; opacity:0.3;">No history.</p>';
 
         let t = { Food: 0, Transport: 0, Other: 0 };
         paidThisMonth.forEach(e => t[e.cat] += e.amt);
