@@ -10,6 +10,7 @@
         :root { 
             --bg: #e0e5ec; --shadow: #a3b1c6; --highlight: #ffffff;
             --accent: #2d5a27; --danger: #d32f2f; --gold: #b19470; --text: #444;
+            --sidebar-w: 0px; /* Hidden on mobile */
         }
         [data-theme="dark"] {
             --bg: #1d2126; --shadow: #121519; --highlight: #282d34;
@@ -22,6 +23,37 @@
             margin: 0; padding: 20px; padding-bottom: 100px;
             display: flex; flex-direction: column; align-items: center;
             transition: background-color 0.3s ease;
+        }
+
+        /* --- DESKTOP TRANSFORMATION --- */
+        @media (min-width: 850px) {
+            :root { --sidebar-w: 240px; }
+            body { 
+                padding-left: calc(var(--sidebar-w) + 40px); 
+                padding-bottom: 40px; 
+                align-items: flex-start;
+            }
+            .nav-bar {
+                top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+                flex-direction: column; border-radius: 0; padding: 40px 20px;
+                justify-content: flex-start; gap: 10px;
+            }
+            .nav-btn {
+                width: 100%; text-align: left; padding: 15px 20px;
+                border-radius: 12px;
+            }
+            .nav-btn.active {
+                box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight);
+            }
+            /* Grid Layout for Desktop Dashboard */
+            .view.active {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 30px;
+                max-width: 1000px;
+            }
+            .neu-card { margin-bottom: 0; width: 100%; max-width: none; }
+            .span-2 { grid-column: span 2; }
         }
 
         .theme-toggle {
@@ -37,7 +69,7 @@
             box-sizing: border-box;
         }
 
-        .view { display: none; width: 100%; max-width: 400px; }
+        .view { display: none; width: 100%; }
         .view.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -76,7 +108,7 @@
             position: fixed; bottom: 20px; display: flex; gap: 20px;
             background: var(--bg); padding: 10px 20px; border-radius: 50px;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            z-index: 100;
+            z-index: 100; transition: all 0.3s ease;
         }
         .nav-btn { border: none; background: none; font-weight: bold; color: var(--text); opacity: 0.5; cursor: pointer; padding: 10px; }
         .nav-btn.active { opacity: 1; color: var(--accent); }
@@ -106,12 +138,6 @@
             <div class="allowance-vibe">MK <span id="dailyLimitDisplay">0</span></div>
         </div>
 
-        <div class="neu-card" style="text-align: center;">
-            <label>Spent in <span id="currMonthName">Month</span></label>
-            <h1>MK <span id="totalDisplay">0</span></h1>
-            <div style="height: 120px;"><canvas id="mainChart"></canvas></div>
-        </div>
-
         <div class="neu-card">
             <label>New Entry</label>
             <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
@@ -130,10 +156,16 @@
             <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
             <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.8rem">
         </div>
+
+        <div class="neu-card" style="text-align: center;">
+            <label>Spent in <span id="currMonthName">Month</span></label>
+            <h1>MK <span id="totalDisplay">0</span></h1>
+            <div style="height: 120px;"><canvas id="mainChart"></canvas></div>
+        </div>
     </div>
 
     <div id="histView" class="view">
-        <div class="neu-card">
+        <div class="neu-card" style="max-width: 800px; width: 100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <button class="nav-btn" onclick="changeMonth(-1)" style="opacity:1">◀</button>
                 <div id="displayMonth" style="font-weight:bold; color:var(--accent);">Month Year</div>
@@ -148,11 +180,15 @@
     </div>
 
     <div class="nav-bar">
-        <button class="nav-btn active" id="nbDash" onclick="showView('dash')">🏠 Home</button>
-        <button class="nav-btn" id="nbHist" onclick="showView('hist')">📜 Ledger</button>
+        <h3 class="desktop-only" style="margin-bottom: 20px; color: var(--accent); display: none;">Commander</h3>
+        <button class="nav-btn active" id="nbDash" onclick="showView('dash')">🏠 Dashboard</button>
+        <button class="nav-btn" id="nbHist" onclick="showView('hist')">📜 History Ledger</button>
     </div>
 
 <script>
+    // ... (Keep all the Javascript from your previous code exactly the same) ...
+    // No changes needed to the logic, just the CSS above handles the desktop look.
+
     let entries = JSON.parse(localStorage.getItem('mw_pro_ledger_v2') || "[]");
     let monthlyGoal = localStorage.getItem('mw_goal_v1') || 0;
     let currentTheme = localStorage.getItem('theme') || 'light';
