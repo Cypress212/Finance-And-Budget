@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wealth Commander MK: Shopping Edition</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#e0e5ec">
+    <title>Wealth Commander MK</title>
+
+    <link rel="manifest" href='data:application/json,{"name":"Wealth Commander MK","short_name":"Commander","start_url":".","display":"standalone","background_color":"#e0e5ec","theme_color":"#2d5a27","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2454/2454282.png","sizes":"512x512","type":"image/png"}]}'>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
@@ -21,25 +27,17 @@
             margin: 0; padding: 15px; padding-bottom: 100px;
             transition: background-color 0.4s ease;
             min-height: 100vh; box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- DESKTOP GRID --- */
         @media (min-width: 1024px) {
-            body { 
-                display: grid; 
-                grid-template-columns: 400px 1fr 400px; 
-                gap: 30px; 
-                padding: 40px; 
-                height: 100vh; 
-                overflow: hidden; 
-            }
+            body { display: grid; grid-template-columns: 400px 1fr 400px; gap: 30px; padding: 40px; height: 100vh; overflow: hidden; }
         }
 
         .neu-card {
             background: var(--bg); border-radius: 30px;
             box-shadow: 8px 8px 16px var(--shadow), -8px -8px 16px var(--highlight);
             padding: 25px; margin-bottom: 25px; box-sizing: border-box;
-            transition: transform 0.3s ease;
         }
 
         .limit-header { text-align: center; border: 2px solid var(--gold); }
@@ -52,11 +50,9 @@
             width: 100%; border: none; padding: 16px; margin-bottom: 15px;
             border-radius: 15px; background: var(--bg);
             box-shadow: inset 5px 5px 10px var(--shadow), inset -5px -5px 10px var(--highlight);
-            color: var(--text); outline: none; box-sizing: border-box; font-family: inherit; font-size: 1rem;
+            color: var(--text); outline: none; box-sizing: border-box; font-size: 16px; /* 16px prevents iOS zoom */
         }
-        textarea { resize: none; overflow: hidden; min-height: 50px; }
 
-        /* --- TACTILE BUTTONS --- */
         .btn-push {
             width: 100%; padding: 18px; border: none; border-radius: 15px;
             background: var(--bg); color: var(--accent); font-weight: 900;
@@ -64,30 +60,25 @@
             cursor: pointer; text-transform: uppercase; margin-bottom: 12px;
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .btn-push:hover { transform: translateY(-2px); color: var(--gold); }
         .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.97); }
-        
-        .btn-checkout { background: var(--accent); color: white !important; margin-top: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .btn-checkout { background: var(--accent); color: white !important; margin-top: 15px; }
 
-        /* --- BASKET STREAM --- */
-        #basketList { overflow-y: auto; max-height: 350px; padding-right: 5px; }
+        #basketList { overflow-y: auto; max-height: 350px; }
         .basket-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px; border-radius: 20px; background: var(--bg);
             box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
-            margin-bottom: 12px; animation: slideIn 0.3s ease-out;
+            margin-bottom: 12px;
         }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
 
         .remove-btn {
             background: var(--bg); border: none; color: var(--danger); font-weight: 900;
             width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
             box-shadow: 3px 3px 6px var(--shadow), -3px -3px 6px var(--highlight);
-            display: flex; align-items: center; justify-content: center; margin-left: 10px;
+            display: flex; align-items: center; justify-content: center;
         }
-        .remove-btn:active { box-shadow: inset 2px 2px 4px var(--shadow); transform: scale(0.9); }
 
-        .theme-toggle { position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%; background: var(--bg); border: none; box-shadow: 4px 4px 10px var(--shadow); cursor: pointer; z-index: 1000; font-size: 1.2rem; }
+        .theme-toggle { position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%; background: var(--bg); border: none; box-shadow: 4px 4px 10px var(--shadow); z-index: 1000; }
     </style>
 </head>
 <body>
@@ -100,7 +91,6 @@
         <div class="limit-value">MK <span id="dailyDisplay">0</span></div>
         <div id="overLimitMsg" class="warning">🚨 BASKET EXCEEDS DAILY LIMIT</div>
     </div>
-
     <div class="neu-card">
         <label>Add Item to Basket</label>
         <input type="number" id="amt" placeholder="Price (MK)" inputmode="decimal">
@@ -111,20 +101,16 @@
             <option value="Other">🌀 Miscellaneous</option>
         </select>
         <button class="btn-push" onclick="addToBasket()">🛒 Add to Basket</button>
-        
         <label style="margin-top: 25px;">Monthly Goal</label>
         <input type="number" id="monthlyGoal" value="200000" oninput="updateUI()">
     </div>
 </div>
 
-<div class="column" style="display: flex; flex-direction: column;">
-    <div class="neu-card" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+<div class="column">
+    <div class="neu-card" style="display: flex; flex-direction: column;">
         <label>Live Basket Tally <span id="basketCount" style="float:right; color:var(--accent)">0 Items</span></label>
         <div id="basketTotal" style="font-size: 2rem; font-weight: 800; margin: 15px 0;">MK 0</div>
-        
-        <div id="basketList">
-            </div>
-
+        <div id="basketList"></div>
         <div style="margin-top: auto; padding-top: 15px;">
             <button class="btn-push btn-checkout" id="checkoutBtn" onclick="checkout()" style="display:none;">💳 Pay & Record Ledger</button>
             <button class="btn-push" style="color:var(--danger); font-size: 0.7rem; box-shadow: none;" onclick="clearBasket()">Discard Basket</button>
@@ -136,9 +122,8 @@
     <div class="neu-card">
         <label>Monthly Paid Total</label>
         <div style="font-size: 1.8rem; font-weight: 900; color: var(--accent);">MK <span id="totalPaid">0</span></div>
-        <div style="height: 220px; margin-top: 20px;"><canvas id="mainChart"></canvas></div>
+        <div style="height: 200px; margin-top: 20px;"><canvas id="mainChart"></canvas></div>
     </div>
-
     <div class="neu-card" style="max-height: 300px; overflow-y: auto;">
         <label>Paid History (Recent)</label>
         <div id="paidHistory" style="font-size: 0.85rem;"></div>
@@ -146,12 +131,16 @@
 </div>
 
 <script>
-    function autoExpand(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
+    // --- PWA SERVICE WORKER REGISTRATION ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGV2ID0+IGV2LnJlc3BvbmRXaXRoKGZldGNoKGV2LnJlcXVlc3QpKSk7');
+        });
     }
 
-    let entries = JSON.parse(localStorage.getItem('commander_ledger_v5') || "[]");
+    function autoExpand(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+
+    let entries = JSON.parse(localStorage.getItem('commander_ledger_v6') || "[]");
     let basket = [];
     let currentTheme = localStorage.getItem('commander_theme') || 'light';
     let chart;
@@ -173,93 +162,57 @@
     }
 
     function addToBasket() {
-        const amtInput = document.getElementById('amt');
-        const descInput = document.getElementById('desc');
-        const amt = parseFloat(amtInput.value);
-        const desc = descInput.value || "Unnamed Item";
-        const cat = document.getElementById('cat').value;
-
+        const a = document.getElementById('amt'), d = document.getElementById('desc');
+        const amt = parseFloat(a.value);
         if (!amt) return;
-
-        basket.push({ id: Date.now(), amt, desc, cat });
-        amtInput.value = '';
-        descInput.value = '';
-        descInput.style.height = 'auto';
+        basket.push({ id: Date.now(), amt, desc: d.value || "Item", cat: document.getElementById('cat').value });
+        a.value = ''; d.value = ''; d.style.height = 'auto';
         updateUI();
     }
 
-    function removeFromBasket(id) {
-        basket = basket.filter(item => item.id !== id);
-        updateUI();
-    }
+    function removeFromBasket(id) { basket = basket.filter(i => i.id !== id); updateUI(); }
 
-    function clearBasket() {
-        if(basket.length > 0 && confirm("Empty the whole basket?")) {
-            basket = [];
-            updateUI();
-        }
-    }
+    function clearBasket() { if(confirm("Empty basket?")) { basket = []; updateUI(); } }
 
     function checkout() {
-        const timestamp = new Date().getTime();
-        basket.forEach(item => {
-            entries.unshift({ ...item, timestamp });
-        });
-        localStorage.setItem('commander_ledger_v5', JSON.stringify(entries));
+        basket.forEach(i => entries.unshift({ ...i, timestamp: Date.now() }));
+        localStorage.setItem('commander_ledger_v6', JSON.stringify(entries));
         basket = [];
         updateUI();
-        alert("Mission Accomplished: Ledger Updated.");
+        alert("Paid!");
     }
 
     function updateUI() {
         const goal = parseFloat(document.getElementById('monthlyGoal').value) || 0;
         const now = new Date();
-        
-        const paidThisMonth = entries.filter(e => {
-            const d = new Date(e.timestamp);
-            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        });
-
+        const paidThisMonth = entries.filter(e => new Date(e.timestamp).getMonth() === now.getMonth());
         const totalPaid = paidThisMonth.reduce((s, e) => s + e.amt, 0);
         const basketTotal = basket.reduce((s, e) => s + e.amt, 0);
-        
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysLeft = (daysInMonth - now.getDate()) + 1;
-        
-        // The core logic: (Budget - Already Paid - What you're holding now) / remaining days
-        const dailyRemaining = Math.floor((goal - totalPaid - basketTotal) / daysLeft);
+        const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
+        const daily = Math.floor((goal - totalPaid - basketTotal) / daysLeft);
 
-        // Display updates
-        document.getElementById('dailyDisplay').innerText = dailyRemaining.toLocaleString();
+        document.getElementById('dailyDisplay').innerText = daily.toLocaleString();
         document.getElementById('totalPaid').innerText = totalPaid.toLocaleString();
         document.getElementById('basketTotal').innerText = `MK ${basketTotal.toLocaleString()}`;
-        document.getElementById('basketCount').innerText = `${basket.length} Items`;
-        document.getElementById('overLimitMsg').style.display = dailyRemaining < 0 ? 'block' : 'none';
+        document.getElementById('basketCount').innerText = basket.length;
+        document.getElementById('overLimitMsg').style.display = daily < 0 ? 'block' : 'none';
         document.getElementById('checkoutBtn').style.display = basket.length > 0 ? 'block' : 'none';
 
-        // Render Basket Items with Quick Delete
-        document.getElementById('basketList').innerHTML = basket.map(item => `
+        document.getElementById('basketList').innerHTML = basket.map(i => `
             <div class="basket-item">
-                <div style="flex: 1; min-width: 0;">
-                    <b style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.desc}</b>
-                    <span style="color:var(--accent); font-weight: 800;">MK ${item.amt.toLocaleString()}</span>
-                </div>
-                <button class="remove-btn" onclick="removeFromBasket(${item.id})">✕</button>
+                <div style="flex:1;"><b>${i.desc}</b><br>MK ${i.amt.toLocaleString()}</div>
+                <button class="remove-btn" onclick="removeFromBasket(${i.id})">✕</button>
             </div>
-        `).join('') || '<p style="text-align:center; opacity:0.3; padding-top: 30px;">Basket is currently empty.</p>';
+        `).join('');
 
-        // Render Paid History
-        document.getElementById('paidHistory').innerHTML = paidThisMonth.slice(0, 8).map(e => `
-            <div style="padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between;">
-                <span>${e.desc}</span>
-                <b>MK ${e.amt.toLocaleString()}</b>
-            </div>
-        `).join('') || 'No history yet.';
+        document.getElementById('paidHistory').innerHTML = paidThisMonth.slice(0, 5).map(e => `
+            <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(0,0,0,0.05)">
+                <span>${e.desc}</span><b>MK ${e.amt.toLocaleString()}</b>
+            </div>`).join('');
 
-        // Update Chart
-        let totals = { Food: 0, Transport: 0, Other: 0 };
-        paidThisMonth.forEach(e => { if(totals[e.cat] !== undefined) totals[e.cat] += e.amt; });
-        chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Other];
+        let t = { Food: 0, Transport: 0, Other: 0 };
+        paidThisMonth.forEach(e => t[e.cat] += e.amt);
+        chart.data.datasets[0].data = [t.Food, t.Transport, t.Other];
         chart.update();
     }
 
