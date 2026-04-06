@@ -26,39 +26,37 @@
             min-height: 100vh; box-sizing: border-box;
         }
 
-        /* --- PC DESKTOP GRID LAYOUT (ZERO SCROLL) --- */
+        /* --- DESKTOP GRID (ZERO SCROLL) --- */
         @media (min-width: 1024px) {
-            :root { --sidebar-w: 220px; }
+            :root { --sidebar-w: 240px; }
             body { 
                 padding: 30px;
                 padding-left: calc(var(--sidebar-w) + 40px); 
                 align-items: stretch;
-                overflow: hidden; /* Prevents body scroll on PC */
+                overflow: hidden; /* Lock screen on PC */
             }
             .nav-bar {
                 top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
                 flex-direction: column; border-radius: 0; padding: 40px 20px;
-                justify-content: flex-start; gap: 15px;
+                justify-content: flex-start; gap: 15px; border-right: 1px solid rgba(0,0,0,0.05);
             }
-            .nav-btn { width: 100%; text-align: left; padding: 15px; border-radius: 12px; }
+            .nav-btn { width: 100%; text-align: left; padding: 18px; border-radius: 15px; font-size: 1rem; }
             .nav-btn.active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); }
             
-            /* Dashboard Grid */
-            .view.active#dashView {
+            #dashView.active {
                 display: grid;
-                grid-template-columns: 1fr 1.2fr; /* Two main columns */
+                grid-template-columns: 400px 1fr;
                 grid-template-rows: auto 1fr;
-                gap: 25px;
+                gap: 30px;
                 height: calc(100vh - 60px);
                 max-width: 1400px;
             }
 
-            .card-stats { grid-column: 1; display: flex; gap: 20px; } /* Small cards side by side */
-            .card-form { grid-column: 1; grid-row: 2; } /* Input form below stats */
-            .card-visuals { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; } /* Chart & List on right */
+            .card-stats { grid-column: 1 / span 2; display: flex; gap: 30px; }
+            .card-form { grid-column: 1; grid-row: 2; overflow-y: auto; padding-right: 10px; }
+            .card-visuals { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; gap: 20px; }
             
             .neu-card { margin-bottom: 0; width: 100%; max-width: none; }
-            #fullHistory { max-height: 60vh; overflow-y: auto; padding-right: 10px; }
         }
 
         /* --- UI ELEMENTS --- */
@@ -69,9 +67,9 @@
         }
 
         .neu-card {
-            background: var(--bg); border-radius: 25px;
-            box-shadow: 8px 8px 15px var(--shadow), -8px -8px 15px var(--highlight);
-            padding: 20px; width: 100%; max-width: 400px; margin-bottom: 20px;
+            background: var(--bg); border-radius: 30px;
+            box-shadow: 8px 8px 16px var(--shadow), -8px -8px 16px var(--highlight);
+            padding: 25px; width: 100%; max-width: 400px; margin-bottom: 25px;
             box-sizing: border-box;
         }
 
@@ -79,23 +77,23 @@
         .view.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .allowance-vibe { font-size: 1.8rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
-        label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 8px; font-weight: bold; }
+        .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
+        label { display: block; font-size: 0.75rem; text-transform: uppercase; opacity: 0.6; margin-bottom: 10px; font-weight: 800; letter-spacing: 1px; }
 
         input, select {
-            width: 100%; border: none; padding: 14px; margin-bottom: 12px;
-            border-radius: 12px; background: var(--bg);
-            box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight);
-            color: var(--text); outline: none; box-sizing: border-box;
+            width: 100%; border: none; padding: 16px; margin-bottom: 15px;
+            border-radius: 15px; background: var(--bg);
+            box-shadow: inset 5px 5px 10px var(--shadow), inset -5px -5px 10px var(--highlight);
+            color: var(--text); outline: none; box-sizing: border-box; font-size: 1rem;
         }
 
         .btn-push {
-            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            width: 100%; padding: 18px; border: none; border-radius: 15px;
             background: var(--bg); color: var(--accent); font-weight: 800;
-            box-shadow: 5px 5px 10px var(--shadow), -5px -5px 10px var(--highlight);
-            cursor: pointer; text-transform: uppercase; margin-bottom: 10px;
+            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            cursor: pointer; text-transform: uppercase; margin-bottom: 12px;
         }
-        .btn-push:active { box-shadow: inset 3px 3px 6px var(--shadow), inset -3px -3px 6px var(--highlight); transform: scale(0.98); }
+        .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.98); }
 
         .nav-bar {
             position: fixed; bottom: 20px; display: flex; gap: 20px;
@@ -107,11 +105,12 @@
         .nav-btn.active { opacity: 1; color: var(--accent); }
 
         .history-item {
-            display: flex; flex-direction: column; padding: 15px; margin-bottom: 12px;
-            border-radius: 15px; background: var(--bg); position: relative;
-            box-shadow: 3px 3px 7px var(--shadow), -3px -3px 7px var(--highlight);
+            display: flex; flex-direction: column; padding: 18px; margin-bottom: 15px;
+            border-radius: 20px; background: var(--bg); position: relative;
+            box-shadow: 4px 4px 10px var(--shadow), -4px -4px 10px var(--highlight);
         }
-        .del-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; }
+        .del-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.3rem; }
+        .receipt-thumb { width: 100%; border-radius: 15px; margin-top: 10px; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -121,69 +120,76 @@
     <div id="dashView" class="view active">
         
         <div class="card-stats">
-            <div class="neu-card" style="text-align: center;">
-                <label>Days Left</label>
-                <div id="daysLeftText" style="font-size: 1.5rem; font-weight: 800;">--</div>
+            <div class="neu-card" style="flex: 1; text-align: center;">
+                <label>Days Remaining</label>
+                <div id="daysLeftText" style="font-size: 2rem; font-weight: 900;">--</div>
             </div>
-            <div class="neu-card" style="text-align: center; border: 2px solid var(--gold);">
-                <label>Daily Allowance</label>
-                <div class="allowance-vibe">MK <span id="dailyLimitDisplay">0</span></div>
+            <div class="neu-card" style="flex: 2; text-align: center; border: 2px solid var(--gold);">
+                <label>Daily Allowance (MK)</label>
+                <div class="allowance-vibe"><span id="dailyLimitDisplay">0</span></div>
             </div>
         </div>
 
         <div class="card-form">
             <div class="neu-card">
-                <label>New Entry</label>
+                <label>New Expense Entry</label>
                 <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
                 <select id="cat">
-                    <option value="Food">Groceries</option>
-                    <option value="Transport">Transport</option>
-                    <option value="Bills">Bills</option>
-                    <option value="Other">Other</option>
+                    <option value="Food">Groceries / Food</option>
+                    <option value="Transport">Transport / Fuel</option>
+                    <option value="Bills">Bills / Rent</option>
+                    <option value="Other">Miscellaneous</option>
                 </select>
-                <input type="text" id="desc" placeholder="Details...">
+                <input type="text" id="desc" placeholder="What was this for?">
                 
                 <input type="file" id="media-input" accept="image/*" style="display:none" onchange="previewMedia(this)">
-                <button class="btn-push" id="media-btn" style="color:var(--gold)" onclick="document.getElementById('media-input').click()">📸 Snap/Upload</button>
-                <img id="receipt-preview" src="" style="width:100%; border-radius:15px; margin-bottom:15px; display:none; max-height: 150px; object-fit: cover;">
+                <button class="btn-push" id="media-btn" style="color:var(--gold)" onclick="document.getElementById('media-input').click()">📸 Snap/Upload Receipt</button>
+                <img id="receipt-preview" src="" style="width:100%; border-radius:15px; margin-bottom:15px; display:none; max-height: 200px; object-fit: cover;">
 
-                <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
-                <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:10px; font-size:0.8rem">
+                <button class="btn-push" onclick="saveEntry()">Commit to Ledger</button>
+                <input type="number" id="monthlyGoal" placeholder="Set Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.8rem; text-align:center;">
             </div>
         </div>
 
         <div class="card-visuals">
-            <div class="neu-card" style="text-align: center; flex: 1;">
+            <div class="neu-card" style="flex: 1; text-align: center; display: flex; flex-direction: column;">
                 <label>Monthly Spend: MK <span id="totalDisplay">0</span></label>
-                <div style="height: 180px;"><canvas id="mainChart"></canvas></div>
-                <hr style="opacity: 0.1; margin: 15px 0;">
-                <label>Recent Ledger</label>
-                <div id="recentHistory" style="text-align: left; font-size: 0.85rem;"></div>
+                <div style="flex: 1; min-height: 200px;"><canvas id="mainChart"></canvas></div>
+                <hr style="opacity: 0.05; margin: 20px 0;">
+                <label>Recent Activity</label>
+                <div id="recentHistory" style="text-align: left; font-size: 0.9rem; overflow-y: auto; max-height: 200px;"></div>
             </div>
         </div>
     </div>
 
     <div id="histView" class="view">
-        <div class="neu-card" style="max-width: 900px; margin: auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <button class="nav-btn" onclick="changeMonth(-1)" style="opacity:1">◀</button>
-                <div id="displayMonth" style="font-weight:bold; font-size: 1.2rem;">Month Year</div>
-                <button class="nav-btn" onclick="changeMonth(1)" style="opacity:1">▶</button>
+        <div class="neu-card" style="max-width: 900px; margin: auto; height: 85vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 5;">
+                <button class="nav-btn" onclick="changeMonth(-1)" style="opacity:1; font-size: 1.5rem;">◀</button>
+                <div id="displayMonth" style="font-weight:900; font-size: 1.4rem; color: var(--accent);">Month Year</div>
+                <button class="nav-btn" onclick="changeMonth(1)" style="opacity:1; font-size: 1.5rem;">▶</button>
             </div>
             <div id="fullHistory"></div>
         </div>
     </div>
 
     <div class="nav-bar">
-        <div class="desktop-only" style="padding: 10px; font-weight: 900; color: var(--accent); font-size: 1.2rem; margin-bottom: 20px;">COMMANDER</div>
+        <div class="desktop-only" style="display:none; padding: 20px; text-align: center;">
+            <h2 style="color: var(--accent); letter-spacing: 2px;">COMMANDER</h2>
+            <p style="font-size: 0.7rem; opacity: 0.5;">Wealth Management MK</p>
+        </div>
         <button class="nav-btn active" id="nbDash" onclick="showView('dash')">🏠 Dashboard</button>
         <button class="nav-btn" id="nbHist" onclick="showView('hist')">📜 Full Ledger</button>
     </div>
 
 <script>
-    // All Logic remains identical to keep mobile/PC synced perfectly
+    // --- OFFLINE & STORAGE LOGIC ---
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
+    }
+
     let entries = JSON.parse(localStorage.getItem('mw_pro_ledger_v3') || "[]");
-    let monthlyGoal = localStorage.getItem('mw_goal_v1') || 50000;
+    let monthlyGoal = localStorage.getItem('mw_goal_v1') || 100000;
     let currentTheme = localStorage.getItem('theme') || 'light';
     let viewDate = new Date();
     let receiptData = null;
@@ -229,9 +235,10 @@
                     canvas.height = img.height * scaleSize;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    receiptData = canvas.toDataURL('image/jpeg', 0.6);
-                    document.getElementById('receipt-preview').src = receiptData;
-                    document.getElementById('receipt-preview').style.display = 'block';
+                    receiptData = canvas.toDataURL('image/jpeg', 0.6); // COMPRESSION
+                    const p = document.getElementById('receipt-preview');
+                    p.src = receiptData;
+                    p.style.display = 'block';
                 };
             };
             reader.readAsDataURL(input.files[0]);
@@ -242,7 +249,10 @@
         const goal = document.getElementById('monthlyGoal').value;
         localStorage.setItem('mw_goal_v1', goal);
         const now = new Date();
-        const filtered = entries.filter(e => new Date(e.timestamp).getMonth() === now.getMonth());
+        const filtered = entries.filter(e => {
+            const d = new Date(e.timestamp);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
         const spent = filtered.reduce((sum, e) => sum + e.amt, 0);
         
         document.getElementById('totalDisplay').innerText = spent.toLocaleString();
@@ -256,14 +266,14 @@
         chart.data.datasets[0].data = [totals.Food, totals.Transport, totals.Bills, totals.Other];
         chart.update();
 
-        // Quick history update for PC side-panel
-        const recent = filtered.slice(0, 5);
+        // PC Recent Activity List
+        const recent = filtered.slice(0, 6);
         document.getElementById('recentHistory').innerHTML = recent.map(e => `
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid rgba(0,0,0,0.05)">
+            <div style="display:flex; justify-content:space-between; padding: 10px 0; border-bottom:1px solid rgba(0,0,0,0.05)">
                 <span>${e.desc || e.cat}</span>
-                <b>MK ${e.amt.toLocaleString()}</b>
+                <b style="color:var(--accent)">MK ${e.amt.toLocaleString()}</b>
             </div>
-        `).join('') || 'No entries yet.';
+        `).join('') || '<p style="opacity:0.5; text-align:center">No recent activity</p>';
     }
 
     function saveEntry() {
@@ -289,7 +299,7 @@
     }
 
     function deleteEntry(id) {
-        if(confirm("Delete entry?")) {
+        if(confirm("Confirm: Delete this record?")) {
             entries = entries.filter(e => e.id !== id);
             localStorage.setItem('mw_pro_ledger_v3', JSON.stringify(entries));
             renderHistory();
@@ -313,18 +323,21 @@
 
     function renderHistory() {
         document.getElementById('displayMonth').innerText = months[viewDate.getMonth()] + " " + viewDate.getFullYear();
-        const filtered = entries.filter(e => new Date(e.timestamp).getMonth() === viewDate.getMonth() && new Date(e.timestamp).getFullYear() === viewDate.getFullYear());
+        const filtered = entries.filter(e => {
+            const d = new Date(e.timestamp);
+            return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
+        });
         
         document.getElementById('fullHistory').innerHTML = filtered.map(e => `
             <div class="history-item">
-                <button class="del-btn" onclick="deleteEntry(${e.id})">×</button>
-                <div style="display:flex; justify-content:space-between; margin-right: 30px;">
-                    <div><strong>${e.desc || e.cat}</strong><br><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
-                    <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
+                <button class="del-btn" onclick="deleteEntry(${e.id})">🗑️</button>
+                <div style="display:flex; justify-content:space-between; margin-right: 40px;">
+                    <div><b style="font-size:1.1rem">${e.desc || e.cat}</b><br><small>${new Date(e.timestamp).toLocaleString()}</small></div>
+                    <div style="font-weight:900; color:var(--accent); font-size:1.1rem;">MK ${e.amt.toLocaleString()}</div>
                 </div>
                 ${e.receipt ? `<img src="${e.receipt}" class="receipt-thumb" onclick="window.open(this.src)">` : ''}
             </div>
-        `).join('') || '<p style="text-align:center; opacity:0.5;">No records.</p>';
+        `).join('') || '<p style="text-align:center; opacity:0.5; padding: 40px;">Zero records for this month.</p>';
     }
 
     function changeMonth(dir) { viewDate.setMonth(viewDate.getMonth() + dir); renderHistory(); }
