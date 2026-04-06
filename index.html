@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2d5a27">
-    <title>Commander MK</title>
+    <title>Wealth Commander MK: Shopping Edition</title>
 
     <link rel="manifest" href='data:application/json,{"name":"Wealth Commander MK","short_name":"Commander","start_url":"index.html","display":"standalone","background_color":"#e0e5ec","theme_color":"#2d5a27","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2454/2454282.png","sizes":"512x512","type":"image/png"}]}'>
 
@@ -30,91 +30,126 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        @media (min-width: 1024px) {
+            body { display: grid; grid-template-columns: 400px 1fr 400px; gap: 30px; padding: 40px; height: 100vh; overflow: hidden; }
+        }
+
         .neu-card {
-            background: var(--bg); border-radius: 25px;
+            background: var(--bg); border-radius: 30px;
             box-shadow: 8px 8px 16px var(--shadow), -8px -8px 16px var(--highlight);
-            padding: 20px; margin-bottom: 20px;
+            padding: 25px; margin-bottom: 25px; box-sizing: border-box;
         }
 
         .limit-header { text-align: center; border: 2px solid var(--gold); }
-        .limit-value { font-size: 2.2rem; font-weight: 900; color: var(--gold); }
+        .limit-value { font-size: 2.2rem; font-weight: 900; color: var(--gold); margin: 5px 0; }
+        .warning { color: var(--danger); font-size: 0.75rem; font-weight: 800; display: none; }
+
+        label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.6; margin-bottom: 10px; font-weight: 900; letter-spacing: 1px; }
 
         input, select, textarea {
-            width: 100%; border: none; padding: 16px; margin-bottom: 12px;
+            width: 100%; border: none; padding: 16px; margin-bottom: 15px;
             border-radius: 15px; background: var(--bg);
             box-shadow: inset 5px 5px 10px var(--shadow), inset -5px -5px 10px var(--highlight);
             color: var(--text); outline: none; box-sizing: border-box; font-size: 16px;
         }
+        textarea { resize: none; overflow: hidden; min-height: 50px; }
 
         .btn-push {
             width: 100%; padding: 18px; border: none; border-radius: 15px;
             background: var(--bg); color: var(--accent); font-weight: 900;
             box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            cursor: pointer; text-transform: uppercase;
+            cursor: pointer; text-transform: uppercase; margin-bottom: 12px;
         }
         .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.97); }
         .btn-checkout { background: var(--accent); color: white !important; margin-top: 15px; }
 
+        #basketList { overflow-y: auto; max-height: 350px; }
         .basket-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px; border-radius: 15px; background: var(--bg);
+            padding: 15px; border-radius: 20px; background: var(--bg);
             box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
-            margin-bottom: 10px; font-size: 0.9rem;
+            margin-bottom: 12px;
         }
 
         .remove-btn {
             background: var(--bg); border: none; color: var(--danger); font-weight: 900;
-            width: 30px; height: 30px; border-radius: 50%; box-shadow: 2px 2px 5px var(--shadow);
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+            box-shadow: 3px 3px 6px var(--shadow), -3px -3px 6px var(--highlight);
+            display: flex; align-items: center; justify-content: center;
         }
 
-        .theme-toggle { position: fixed; top: 15px; right: 15px; width: 45px; height: 45px; border-radius: 50%; background: var(--bg); border: none; box-shadow: 4px 4px 10px var(--shadow); z-index: 1000; }
+        .theme-toggle { position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%; background: var(--bg); border: none; box-shadow: 4px 4px 10px var(--shadow); z-index: 1000; }
     </style>
 </head>
 <body>
 
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
-<div class="neu-card limit-header">
-    <label style="font-size: 0.6rem; font-weight: 900;">DAILY LIMIT</label>
-    <div class="limit-value">MK <span id="dailyDisplay">0</span></div>
+<div class="column">
+    <div class="neu-card limit-header">
+        <label>Daily Budget (Post-Basket)</label>
+        <div class="limit-value">MK <span id="dailyDisplay">0</span></div>
+        <div id="overLimitMsg" class="warning">🚨 BASKET EXCEEDS DAILY LIMIT</div>
+    </div>
+    <div class="neu-card">
+        <label>Add Item to Basket</label>
+        <input type="number" id="amt" placeholder="Price (MK)" inputmode="decimal">
+        <textarea id="desc" placeholder="Item Name/Details..." oninput="autoExpand(this)"></textarea>
+        <select id="cat">
+            <option value="Food">🍱 Food / Groceries</option>
+            <option value="Transport">⛽ Transport</option>
+            <option value="Other">🌀 Miscellaneous</option>
+        </select>
+        <button class="btn-push" onclick="addToBasket()">🛒 Add to Basket</button>
+        <label style="margin-top: 25px;">Monthly Goal</label>
+        <input type="number" id="monthlyGoal" value="200000" oninput="updateUI()">
+    </div>
 </div>
 
-<div class="neu-card">
-    <input type="number" id="amt" placeholder="Price (MK)" inputmode="decimal">
-    <input type="text" id="desc" placeholder="Item Name">
-    <button class="btn-push" onclick="addToBasket()">🛒 Add to Basket</button>
+<div class="column">
+    <div class="neu-card" style="display: flex; flex-direction: column;">
+        <label>Live Basket Tally <span id="basketCount" style="float:right; color:var(--accent)">0 Items</span></label>
+        <div id="basketTotal" style="font-size: 2rem; font-weight: 800; margin: 15px 0;">MK 0</div>
+        <div id="basketList"></div>
+        <div style="margin-top: auto; padding-top: 15px;">
+            <button class="btn-push btn-checkout" id="checkoutBtn" onclick="checkout()" style="display:none;">💳 Pay & Record Ledger</button>
+            <button class="btn-push" style="color:var(--danger); font-size: 0.7rem; box-shadow: none;" onclick="clearBasket()">Discard Basket</button>
+        </div>
+    </div>
 </div>
 
-<div class="neu-card">
-    <label>Current Basket</label>
-    <div id="basketTotal" style="font-size: 1.5rem; font-weight: 800; margin: 10px 0;">MK 0</div>
-    <div id="basketList"></div>
-    <button class="btn-push btn-checkout" id="checkoutBtn" onclick="checkout()" style="display:none;">💳 Checkout</button>
-</div>
-
-<div class="neu-card">
-    <label>Monthly Progress</label>
-    <div style="height: 150px;"><canvas id="mainChart"></canvas></div>
-    <input type="number" id="monthlyGoal" value="200000" oninput="updateUI()" style="margin-top:15px; text-align: center;">
+<div class="column">
+    <div class="neu-card">
+        <label>Monthly Paid Total</label>
+        <div style="font-size: 1.8rem; font-weight: 900; color: var(--accent);">MK <span id="totalPaid">0</span></div>
+        <div style="height: 200px; margin-top: 20px;"><canvas id="mainChart"></canvas></div>
+    </div>
+    <div class="neu-card" style="max-height: 300px; overflow-y: auto;">
+        <label>Paid History (Recent)</label>
+        <div id="paidHistory" style="font-size: 0.85rem;"></div>
+    </div>
 </div>
 
 <script>
-    // STEP 2: THE SERVICE WORKER (Allows Offline/Installation)
+    // --- SERVICE WORKER (Makes it Installable) ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            const swCode = "self.addEventListener('install', e => e.waitUntil(caches.open('v1').then(c => c.addAll(['index.html'])))); self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));";
+            const swCode = `self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));`;
             const blob = new Blob([swCode], {type: 'text/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(blob));
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
         });
     }
 
-    let entries = JSON.parse(localStorage.getItem('commander_v7') || "[]");
+    function autoExpand(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+
+    let entries = JSON.parse(localStorage.getItem('commander_ledger_v10') || "[]");
     let basket = [];
-    let currentTheme = localStorage.getItem('theme_v7') || 'light';
+    let currentTheme = localStorage.getItem('commander_theme') || 'light';
     let chart;
 
     window.onload = () => {
-        applyTheme();
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
         initChart();
         updateUI();
     };
@@ -123,63 +158,30 @@
         const ctx = document.getElementById('mainChart').getContext('2d');
         chart = new Chart(ctx, {
             type: 'doughnut',
-            data: { labels: ['Spent', 'Remaining'], datasets: [{ data: [0, 100], backgroundColor: ['#2d5a27', '#a3b1c6'], borderWidth: 0 }] },
+            data: { labels: ['Food', 'Transport', 'Other'], datasets: [{ data: [1,1,1], backgroundColor: ['#2d5a27', '#6c757d', '#b19470'], borderWidth: 0 }] },
             options: { cutout: '80%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
         });
     }
 
     function addToBasket() {
         const a = document.getElementById('amt'), d = document.getElementById('desc');
-        if (!a.value) return;
-        basket.push({ id: Date.now(), amt: parseFloat(a.value), desc: d.value || "Item" });
-        a.value = ''; d.value = '';
+        const amt = parseFloat(a.value);
+        if (!amt) return;
+        basket.push({ id: Date.now(), amt, desc: d.value || "Item", cat: document.getElementById('cat').value });
+        a.value = ''; d.value = ''; d.style.height = 'auto';
         updateUI();
     }
 
     function removeFromBasket(id) { basket = basket.filter(i => i.id !== id); updateUI(); }
 
+    function clearBasket() { if(confirm("Empty basket?")) { basket = []; updateUI(); } }
+
     function checkout() {
         basket.forEach(i => entries.unshift({ ...i, timestamp: Date.now() }));
-        localStorage.setItem('commander_v7', JSON.stringify(entries));
+        localStorage.setItem('commander_ledger_v10', JSON.stringify(entries));
         basket = [];
         updateUI();
-        alert("Mission Confirmed.");
+        alert("Transaction Recorded.");
     }
 
     function updateUI() {
-        const goal = parseFloat(document.getElementById('monthlyGoal').value) || 1;
-        const now = new Date();
-        const paidThisMonth = entries.filter(e => new Date(e.timestamp).getMonth() === now.getMonth());
-        const totalPaid = paidThisMonth.reduce((s, e) => s + e.amt, 0);
-        const basketTotal = basket.reduce((s, e) => s + e.amt, 0);
-        const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
-        
-        const daily = Math.floor((goal - totalPaid - basketTotal) / daysLeft);
-        document.getElementById('dailyDisplay').innerText = daily.toLocaleString();
-        document.getElementById('basketTotal').innerText = `MK ${basketTotal.toLocaleString()}`;
-        document.getElementById('checkoutBtn').style.display = basket.length > 0 ? 'block' : 'none';
-
-        document.getElementById('basketList').innerHTML = basket.map(i => `
-            <div class="basket-item">
-                <span><b>${i.desc}</b><br>MK ${i.amt.toLocaleString()}</span>
-                <button class="remove-btn" onclick="removeFromBasket(${i.id})">✕</button>
-            </div>
-        `).join('');
-
-        chart.data.datasets[0].data = [totalPaid, Math.max(0, goal - totalPaid)];
-        chart.update();
-    }
-
-    function applyTheme() {
-        document.documentElement.setAttribute('data-theme', currentTheme);
-        document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
-    }
-
-    function toggleTheme() {
-        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-        localStorage.setItem('theme_v7', currentTheme);
-        applyTheme();
-    }
-</script>
-</body>
-</html>
