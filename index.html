@@ -26,7 +26,28 @@
             min-height: 100vh; box-sizing: border-box;
         }
 
-        /* --- DESKTOP GRID FIX --- */
+        /* --- THEME BUTTON FIX --- */
+        .theme-toggle {
+            position: fixed; 
+            top: 25px; 
+            right: 25px; 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 50%;
+            background: var(--bg); 
+            border: none; 
+            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            cursor: pointer; 
+            z-index: 9999; /* Higher than everything else */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: transform 0.2s ease;
+        }
+        .theme-toggle:active { transform: scale(0.9); }
+
+        /* --- DESKTOP GRID --- */
         @media (min-width: 1024px) {
             :root { --sidebar-w: 240px; }
             body { padding: 30px; padding-left: calc(var(--sidebar-w) + 40px); align-items: stretch; overflow: hidden; }
@@ -36,7 +57,7 @@
             
             #dashView.active { 
                 display: grid; 
-                grid-template-columns: 420px 1fr; /* Fixed width for form col */
+                grid-template-columns: 420px 1fr; 
                 grid-template-rows: auto 1fr; 
                 gap: 30px; 
                 height: calc(100vh - 60px); 
@@ -61,17 +82,12 @@
         label { display: block; font-size: 0.75rem; text-transform: uppercase; opacity: 0.6; margin-bottom: 10px; font-weight: 800; }
 
         input, select, textarea {
-            width: 100%; max-width: 100%; /* LOCK WIDTH */
-            border: none; padding: 16px; margin-bottom: 15px;
+            width: 100%; max-width: 100%; border: none; padding: 16px; margin-bottom: 15px;
             border-radius: 15px; background: var(--bg);
             box-shadow: inset 5px 5px 10px var(--shadow), inset -5px -5px 10px var(--highlight);
             color: var(--text); outline: none; box-sizing: border-box; font-size: 1rem;
-            font-family: inherit; 
-            resize: none; 
-            overflow-wrap: break-word; /* Force text to wrap */
-            white-space: pre-wrap;
+            font-family: inherit; resize: none; overflow-wrap: break-word; white-space: pre-wrap;
         }
-
         textarea { min-height: 60px; line-height: 1.5; transition: height 0.1s ease; }
 
         .btn-push {
@@ -116,13 +132,10 @@
                     <option value="Bills">Bills / Rent</option>
                     <option value="Other">Miscellaneous</option>
                 </select>
-                
                 <textarea id="desc" placeholder="Add details..." oninput="autoExpand(this)"></textarea>
-                
                 <input type="file" id="media-input" accept="image/*" style="display:none" onchange="previewMedia(this)">
                 <button class="btn-push" id="media-btn" style="color:var(--gold)" onclick="document.getElementById('media-input').click()">📸 Snap/Upload</button>
                 <img id="receipt-preview" src="" style="width:100%; border-radius:15px; margin-bottom:15px; display:none; max-height: 200px; object-fit: cover;">
-
                 <button class="btn-push" onclick="saveEntry()">Commit</button>
                 <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.8rem; text-align:center;">
             </div>
@@ -151,7 +164,6 @@
     </div>
 
 <script>
-    // JS FIX: Ensure textarea width is strictly calculated based on parent
     function autoExpand(textarea) {
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
@@ -165,6 +177,8 @@
     let chart;
 
     window.onload = () => {
+        // Set initial theme icon
+        document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
         document.documentElement.setAttribute('data-theme', currentTheme);
         document.getElementById('monthlyGoal').value = monthlyGoal;
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -288,6 +302,7 @@
     function toggleTheme() {
         currentTheme = currentTheme === 'light' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', currentTheme);
+        document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
         localStorage.setItem('theme', currentTheme);
     }
 </script>
