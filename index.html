@@ -60,13 +60,6 @@
         .allowance-vibe { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 5px 0; }
         label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; font-weight: bold; }
 
-        .progress-container {
-            width: 100%; height: 12px; background: var(--bg); border-radius: 10px;
-            box-shadow: inset 3px 3px 6px var(--shadow), inset -3px -3px 6px var(--highlight);
-            margin: 15px 0; overflow: hidden;
-        }
-        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s ease; border-radius: 10px; }
-
         input, select {
             width: 100%; border: none; padding: 15px; margin-bottom: 15px;
             border-radius: 12px; background: var(--bg);
@@ -96,6 +89,7 @@
             border-radius: 15px; background: var(--bg);
             box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
         }
+        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -103,10 +97,9 @@
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
     <div id="dashView" class="view active">
-        <div class="neu-card" style="text-align: center;">
+        <div class="neu-card">
             <label>Month Progress</label>
-            <div class="progress-container"><div id="monthProgressFill" class="progress-fill"></div></div>
-            <div id="daysLeftText" style="font-size: 0.8rem; font-weight: bold;">-- Days Left</div>
+            <div id="daysLeftText" style="font-size: 1.2rem; font-weight: bold;">-- Days Left</div>
         </div>
 
         <div class="neu-card" style="text-align: center; border: 2px solid var(--gold);">
@@ -124,6 +117,11 @@
                 <option value="Other">Other</option>
             </select>
             <input type="text" id="desc" placeholder="Details...">
+            
+            <input type="file" id="media-input" accept="image/*" style="display:none" onchange="previewMedia(this)">
+            <button class="btn-push" id="media-btn" style="color:var(--gold)" onclick="document.getElementById('media-input').click()">📸 Snap Receipt</button>
+            <img id="receipt-preview" src="" style="width:100%; border-radius:15px; margin-bottom:15px; display:none;">
+
             <button class="btn-push" onclick="saveEntry()">Commit Entry</button>
             <input type="number" id="monthlyGoal" placeholder="Monthly Goal (MK)" oninput="updateUI()" style="margin-top:20px; font-size:0.8rem">
         </div>
@@ -146,23 +144,21 @@
     </div>
 
     <div class="nav-bar">
-        <button class="nav-btn active" id="nbDash" onclick="showView('dash')">🏠 Home</button>
+        <button class="nav-btn active" id="nbDash" onclick="showView('dash')">🏠 Dashboard</button>
         <button class="nav-btn" id="nbHist" onclick="showView('hist')">📜 Ledger</button>
     </div>
 
 <script>
-    // --- OFFLINE SERVICE WORKER REGISTRATION ---
+    // --- OFFLINE SERVICE WORKER ---
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log("Commander Offline Mode Active"))
-        .catch(err => console.log("Offline mode failed:", err));
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
     }
 
-    // --- APP LOGIC ---
-    let entries = JSON.parse(localStorage.getItem('mw_pro_ledger_v2') || "[]");
+    let entries = JSON.parse(localStorage.getItem('mw_pro_ledger_v3') || "[]");
     let monthlyGoal = localStorage.getItem('mw_goal_v1') || 50000;
     let currentTheme = localStorage.getItem('theme') || 'light';
     let viewDate = new Date();
+    let receiptData = null;
     let chart;
 
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -170,6 +166,21 @@
     window.onload = () => {
         document.documentElement.setAttribute('data-theme', currentTheme);
         document.getElementById('monthlyGoal').value = monthlyGoal;
+        
+        // --- SMART DEVICE DETECTION ---
+        const mediaInput = document.getElementById('media-input');
+        const mediaBtn = document.getElementById('media-btn');
+        
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            mediaInput.setAttribute('capture', 'environment'); // Force camera
+            mediaBtn.innerHTML = "📸 Snap Receipt";
+        } else {
+            mediaInput.removeAttribute('capture'); // Standard file upload
+            mediaBtn.innerHTML = "📂 Upload Receipt";
+        }
+
         initChart();
         updateUI();
     };
@@ -186,6 +197,19 @@
         });
     }
 
+    function previewMedia(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                receiptData = e.target.result;
+                const p = document.getElementById('receipt-preview');
+                p.src = receiptData;
+                p.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
     function updateUI() {
         const goal = document.getElementById('monthlyGoal').value;
         localStorage.setItem('mw_goal_v1', goal);
@@ -196,8 +220,7 @@
         document.getElementById('totalDisplay').innerText = spent.toLocaleString();
         const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
         document.getElementById('dailyLimitDisplay').innerText = Math.max(0, Math.floor((goal - spent) / daysLeft)).toLocaleString();
-        document.getElementById('monthProgressFill').style.width = (now.getDate() / 31 * 100) + "%";
-        document.getElementById('daysLeftText').innerText = `${daysLeft} Days Left`;
+        document.getElementById('daysLeftText').innerText = `${daysLeft} Days Remaining`;
 
         let totals = { Food: 0, Transport: 0, Bills: 0, Other: 0 };
         filtered.forEach(e => totals[e.cat] += e.amt);
@@ -208,9 +231,18 @@
     function saveEntry() {
         const amt = parseFloat(document.getElementById('amt').value);
         if (!amt) return;
-        entries.unshift({ amt, cat: document.getElementById('cat').value, desc: document.getElementById('desc').value, timestamp: new Date().getTime() });
-        localStorage.setItem('mw_pro_ledger_v2', JSON.stringify(entries));
+        entries.unshift({ 
+            amt, 
+            cat: document.getElementById('cat').value, 
+            desc: document.getElementById('desc').value, 
+            receipt: receiptData,
+            timestamp: new Date().getTime() 
+        });
+        localStorage.setItem('mw_pro_ledger_v3', JSON.stringify(entries));
         document.getElementById('amt').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('receipt-preview').style.display = 'none';
+        receiptData = null;
         updateUI();
     }
 
@@ -236,6 +268,7 @@
                     <div><strong>${e.desc || e.cat}</strong><br><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
                     <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
                 </div>
+                ${e.receipt ? `<img src="${e.receipt}" class="receipt-thumb" onclick="window.open(this.src)">` : ''}
             </div>
         `).join('') || '<p style="text-align:center; opacity:0.5;">No records.</p>';
     }
