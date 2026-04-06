@@ -85,11 +85,19 @@
         .nav-btn.active { opacity: 1; color: var(--accent); }
 
         .history-item {
-            display: flex; flex-direction: column; padding: 15px; margin-bottom: 12px;
-            border-radius: 15px; background: var(--bg);
-            box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
+            display: flex; flex-direction: column; padding: 18px; margin-bottom: 15px;
+            border-radius: 20px; background: var(--bg);
+            box-shadow: 4px 4px 10px var(--shadow), -4px -4px 10px var(--highlight);
+            position: relative;
         }
-        .receipt-thumb { width: 100%; border-radius: 10px; margin-top: 10px; cursor: pointer; }
+
+        .del-btn {
+            position: absolute; top: 15px; right: 15px; background: none; border: none;
+            color: var(--danger); font-size: 1.2rem; cursor: pointer; opacity: 0.6;
+        }
+        .del-btn:hover { opacity: 1; }
+
+        .receipt-thumb { width: 100%; border-radius: 15px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -97,7 +105,7 @@
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
     <div id="dashView" class="view active">
-        <div class="neu-card">
+        <div class="neu-card" style="text-align: center;">
             <label>Month Progress</label>
             <div id="daysLeftText" style="font-size: 1.2rem; font-weight: bold;">-- Days Left</div>
         </div>
@@ -144,12 +152,11 @@
     </div>
 
     <div class="nav-bar">
-        <button class="nav-btn active" id="nbDash" onclick="showView('dash')">🏠 Dashboard</button>
+        <button class="nav-btn active" id="nbDash" onclick="showView('dash')">🏠 Home</button>
         <button class="nav-btn" id="nbHist" onclick="showView('hist')">📜 Ledger</button>
     </div>
 
 <script>
-    // --- OFFLINE SERVICE WORKER ---
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
     }
@@ -167,17 +174,15 @@
         document.documentElement.setAttribute('data-theme', currentTheme);
         document.getElementById('monthlyGoal').value = monthlyGoal;
         
-        // --- SMART DEVICE DETECTION ---
         const mediaInput = document.getElementById('media-input');
         const mediaBtn = document.getElementById('media-btn');
-        
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
         if (isMobile) {
-            mediaInput.setAttribute('capture', 'environment'); // Force camera
+            mediaInput.setAttribute('capture', 'environment');
             mediaBtn.innerHTML = "📸 Snap Receipt";
         } else {
-            mediaInput.removeAttribute('capture'); // Standard file upload
+            mediaInput.removeAttribute('capture');
             mediaBtn.innerHTML = "📂 Upload Receipt";
         }
 
@@ -197,15 +202,27 @@
         });
     }
 
+    // --- COMPRESSION LOGIC (Makes receipts actually save) ---
     function previewMedia(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                receiptData = e.target.result;
-                const p = document.getElementById('receipt-preview');
-                p.src = receiptData;
-                p.style.display = 'block';
-            }
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600; 
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    receiptData = canvas.toDataURL('image/jpeg', 0.6); // Compress to 60% quality
+                    const p = document.getElementById('receipt-preview');
+                    p.src = receiptData;
+                    p.style.display = 'block';
+                };
+            };
             reader.readAsDataURL(input.files[0]);
         }
     }
@@ -218,7 +235,8 @@
         const spent = filtered.reduce((sum, e) => sum + e.amt, 0);
         
         document.getElementById('totalDisplay').innerText = spent.toLocaleString();
-        const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysLeft = (daysInMonth - now.getDate()) + 1;
         document.getElementById('dailyLimitDisplay').innerText = Math.max(0, Math.floor((goal - spent) / daysLeft)).toLocaleString();
         document.getElementById('daysLeftText').innerText = `${daysLeft} Days Remaining`;
 
@@ -229,21 +247,38 @@
     }
 
     function saveEntry() {
-        const amt = parseFloat(document.getElementById('amt').value);
+        const amtInput = document.getElementById('amt');
+        const amt = parseFloat(amtInput.value);
         if (!amt) return;
-        entries.unshift({ 
+        
+        const newEntry = { 
+            id: Date.now(), // Unique ID for deleting
             amt, 
             cat: document.getElementById('cat').value, 
             desc: document.getElementById('desc').value, 
             receipt: receiptData,
             timestamp: new Date().getTime() 
-        });
+        };
+        
+        entries.unshift(newEntry);
         localStorage.setItem('mw_pro_ledger_v3', JSON.stringify(entries));
-        document.getElementById('amt').value = '';
+        
+        // Reset inputs
+        amtInput.value = '';
         document.getElementById('desc').value = '';
         document.getElementById('receipt-preview').style.display = 'none';
         receiptData = null;
         updateUI();
+    }
+
+    // --- DELETE LOGIC ---
+    function deleteEntry(id) {
+        if(confirm("Remove this entry forever?")) {
+            entries = entries.filter(e => e.id !== id);
+            localStorage.setItem('mw_pro_ledger_v3', JSON.stringify(entries));
+            renderHistory();
+            updateUI();
+        }
     }
 
     function showView(v) {
@@ -252,6 +287,7 @@
         if(v === 'dash') {
             document.getElementById('dashView').classList.add('active');
             document.getElementById('nbDash').classList.add('active');
+            updateUI();
         } else {
             document.getElementById('histView').classList.add('active');
             document.getElementById('nbHist').classList.add('active');
@@ -261,16 +297,18 @@
 
     function renderHistory() {
         document.getElementById('displayMonth').innerText = months[viewDate.getMonth()] + " " + viewDate.getFullYear();
-        const filtered = entries.filter(e => new Date(e.timestamp).getMonth() === viewDate.getMonth());
+        const filtered = entries.filter(e => new Date(e.timestamp).getMonth() === viewDate.getMonth() && new Date(e.timestamp).getFullYear() === viewDate.getFullYear());
+        
         document.getElementById('fullHistory').innerHTML = filtered.map(e => `
             <div class="history-item">
-                <div style="display:flex; justify-content:space-between;">
+                <button class="del-btn" onclick="deleteEntry(${e.id})">×</button>
+                <div style="display:flex; justify-content:space-between; margin-right: 25px;">
                     <div><strong>${e.desc || e.cat}</strong><br><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
                     <div style="font-weight:bold; color:var(--accent);">MK ${e.amt.toLocaleString()}</div>
                 </div>
                 ${e.receipt ? `<img src="${e.receipt}" class="receipt-thumb" onclick="window.open(this.src)">` : ''}
             </div>
-        `).join('') || '<p style="text-align:center; opacity:0.5;">No records.</p>';
+        `).join('') || '<p style="text-align:center; opacity:0.5;">No records for this month.</p>';
     }
 
     function changeMonth(dir) { viewDate.setMonth(viewDate.getMonth() + dir); renderHistory(); }
