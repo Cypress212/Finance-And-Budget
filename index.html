@@ -9,12 +9,11 @@
 
     <link rel="manifest" href='data:application/json,{"name":"Wealth Commander","short_name":"Commander","start_url":"index.html","display":"standalone","background_color":"#e0e5ec","theme_color":"#2d5a27","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2454/2454282.png","sizes":"512x512","type":"image/png"}]}'>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg: #e0e5ec; --shadow: #a3b1c6; --highlight: #ffffff; --accent: #2d5a27; --danger: #d32f2f; --text: #444; }
         [data-theme="dark"] { --bg: #1d2126; --shadow: #121519; --highlight: #282d34; --accent: #4caf50; --text: #e0e0e0; }
         
-        body { font-family: sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 50px; }
+        body { font-family: sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 50px; transition: 0.3s; }
         
         .card { 
             background: var(--bg); border-radius: 20px; 
@@ -22,11 +21,10 @@
             padding: 20px; margin-bottom: 20px; 
         }
 
-        h2 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; opacity: 0.7; }
+        h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; opacity: 0.7; }
+        .big-number { font-size: 2.5rem; font-weight: 900; color: var(--accent); margin: 10px 0; }
         
-        .big-number { font-size: 2.2rem; font-weight: bold; color: var(--accent); margin: 10px 0; }
-        
-        input, select { 
+        input { 
             width: 100%; border: none; padding: 15px; margin-bottom: 10px; 
             border-radius: 12px; background: var(--bg); font-size: 16px;
             box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight);
@@ -34,71 +32,58 @@
         }
 
         button { 
-            width: 100%; padding: 15px; border: none; border-radius: 12px; 
+            width: 100%; padding: 16px; border: none; border-radius: 12px; 
             background: var(--bg); color: var(--accent); font-weight: bold;
             box-shadow: 5px 5px 10px var(--shadow), -5px -5px 10px var(--highlight);
-            cursor: pointer; margin-bottom: 10px;
+            cursor: pointer; margin-bottom: 10px; text-transform: uppercase;
         }
         button:active { box-shadow: inset 2px 2px 5px var(--shadow); transform: scale(0.98); }
         .btn-main { background: var(--accent); color: white; margin-top: 10px; }
 
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .del-btn { color: var(--danger); background: none; box-shadow: none; width: auto; padding: 5px 10px; margin: 0; }
 
-        .help-text { font-size: 0.8rem; opacity: 0.6; text-align: center; margin-top: 30px; line-height: 1.5; }
-        .theme-btn { position: fixed; top: 15px; right: 15px; width: 40px; height: 40px; border-radius: 50%; z-index: 100; }
+        .theme-btn { position: fixed; top: 15px; right: 15px; width: 45px; height: 45px; border-radius: 50%; z-index: 100; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
 <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
-<div class="card" style="text-align: center; border: 2px solid var(--accent);">
-    <h2>Today's Safe Spending</h2>
+<div class="card" style="text-align: center; border: 3px solid var(--accent); margin-top: 40px;">
+    <h2>Daily Budget Left</h2>
     <div class="big-number">MK <span id="dailyDisplay">0</span></div>
-    <p id="statusMsg" style="font-size: 0.8rem; font-weight: bold;"></p>
+    <div id="mathBreakdown" style="font-size: 0.7rem; opacity: 0.6;">Calculating...</div>
 </div>
 
 <div class="card">
     <h2>Add to Basket</h2>
-    <input type="number" id="amt" placeholder="Enter Price (MK)" inputmode="decimal">
-    <input type="text" id="desc" placeholder="What are you buying?">
-    <select id="cat">
-        <option value="Food">🍱 Food / Groceries</option>
-        <option value="Transport">⛽ Transport</option>
-        <option value="Other">🌀 Other</option>
-    </select>
-    <button class="btn-main" onclick="addToBasket()">+ Add Item</button>
+    <input type="number" id="amt" placeholder="Price (MK)" inputmode="decimal">
+    <input type="text" id="desc" placeholder="Item Name">
+    <button class="btn-main" onclick="addToBasket()">🛒 Add Item</button>
 </div>
 
 <div class="card">
-    <h2>Items in Hand (<span id="count">0</span>)</h2>
-    <div id="basketTotal" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">Total: MK 0</div>
+    <h2>Current Basket (<span id="count">0</span>)</h2>
+    <div id="basketTotal" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: var(--danger);">Basket: MK 0</div>
     <div id="basketList"></div>
-    <button class="btn-main" id="payBtn" style="display:none; background: #2d5a27;" onclick="checkout()">✅ Confirm Purchase</button>
+    <button class="btn-main" id="payBtn" style="display:none; background: #2d5a27;" onclick="checkout()">💳 Confirm Payment</button>
 </div>
 
 <div class="card">
-    <h2>Settings</h2>
-    <label style="font-size: 0.7rem;">Monthly Spending Limit:</label>
+    <h2>Monthly Settings</h2>
+    <label style="font-size: 0.7rem;">Goal for the Month (MK):</label>
     <input type="number" id="monthlyGoal" value="200000" oninput="updateUI()">
 </div>
 
 <div class="card">
-    <h2>Purchase History</h2>
+    <h2>Today's History</h2>
     <div id="historyList"></div>
-    <button class="del-btn" style="width:100%; margin-top:15px;" onclick="clearHistory()">Clear All History</button>
-</div>
-
-<div class="help-text">
-    <b>To install on your phone:</b><br>
-    iPhone: Tap Share -> "Add to Home Screen"<br>
-    Android: Tap 3 dots -> "Install App"
+    <button class="del-btn" style="width:100%; margin-top:20px; font-size: 0.7rem;" onclick="clearHistory()">Clear History</button>
 </div>
 
 <script>
-    // App Logic
-    let entries = JSON.parse(localStorage.getItem('simple_commander_v1') || "[]");
+    let entries = JSON.parse(localStorage.getItem('commander_final_v1') || "[]");
     let basket = [];
     let theme = localStorage.getItem('theme') || 'light';
 
@@ -106,55 +91,72 @@
 
     function addToBasket() {
         const a = document.getElementById('amt'), d = document.getElementById('desc');
-        if (!a.value) return;
-        basket.push({ id: Date.now(), amt: parseFloat(a.value), desc: d.value || "Item", cat: document.getElementById('cat').value });
+        if (!a.value || a.value <= 0) return;
+        basket.push({ id: Date.now(), amt: parseFloat(a.value), desc: d.value || "Item" });
         a.value = ''; d.value = ''; updateUI();
     }
 
     function checkout() {
         basket.forEach(i => entries.unshift({ ...i, timestamp: Date.now() }));
-        localStorage.setItem('simple_commander_v1', JSON.stringify(entries));
+        localStorage.setItem('commander_final_v1', JSON.stringify(entries));
         basket = []; updateUI();
-        alert("Saved to history!");
+        alert("Purchase recorded!");
     }
 
     function updateUI() {
         const goal = parseFloat(document.getElementById('monthlyGoal').value) || 0;
         const now = new Date();
-        const paidThisMonth = entries.filter(e => new Date(e.timestamp).getMonth() === now.getMonth());
         
-        const totalPaid = paidThisMonth.reduce((s, e) => s + e.amt, 0);
-        const basketTotal = basket.reduce((s, e) => s + e.amt, 0);
-        const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
-        
-        const daily = Math.floor((goal - totalPaid - basketTotal) / daysLeft);
+        // 1. Calculate how much was already spent this month
+        const spentThisMonth = entries
+            .filter(e => new Date(e.timestamp).getMonth() === now.getMonth())
+            .reduce((s, e) => s + e.amt, 0);
 
-        document.getElementById('dailyDisplay').innerText = daily.toLocaleString();
-        document.getElementById('basketTotal').innerText = `Total: MK ${basketTotal.toLocaleString()}`;
+        // 2. Calculate current basket total
+        const basketTotal = basket.reduce((s, e) => s + e.amt, 0);
+        
+        // 3. Calculate days left in month (including today)
+        const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysLeft = (totalDaysInMonth - now.getDate()) + 1;
+        
+        // 4. THE CORRECT MATH:
+        // (Monthly Goal - Total Spent) / Days Left - Current Basket
+        const dailyAllowance = (goal - spentThisMonth) / daysLeft;
+        const finalDaily = Math.floor(dailyAllowance - basketTotal);
+
+        // Display
+        document.getElementById('dailyDisplay').innerText = finalDaily.toLocaleString();
+        document.getElementById('basketTotal').innerText = `Basket: MK ${basketTotal.toLocaleString()}`;
         document.getElementById('count').innerText = basket.length;
         document.getElementById('payBtn').style.display = basket.length > 0 ? 'block' : 'none';
         
-        const msg = document.getElementById('statusMsg');
-        if (daily < 0) { msg.innerText = "⚠️ YOU ARE OVER BUDGET!"; msg.style.color = "red"; }
-        else { msg.innerText = "You are doing great!"; msg.style.color = "var(--accent)"; }
+        document.getElementById('mathBreakdown').innerText = 
+            `Remaining: MK ${(goal - spentThisMonth).toLocaleString()} ÷ ${daysLeft} days`;
 
+        // Style change if over budget
+        const display = document.getElementById('dailyDisplay');
+        display.style.color = finalDaily < 0 ? "var(--danger)" : "var(--accent)";
+
+        // Lists
         document.getElementById('basketList').innerHTML = basket.map(i => `
             <div class="row">
-                <span>${i.desc} (MK ${i.amt})</span>
-                <button class="del-btn" onclick="basket = basket.filter(x => x.id !== ${i.id}); updateUI();">✕</button>
+                <span>${i.desc} - MK ${i.amt.toLocaleString()}</span>
+                <button class="del-btn" onclick="removeBasketItem(${i.id})">✕</button>
             </div>`).join('');
 
-        document.getElementById('historyList').innerHTML = paidThisMonth.slice(0, 5).map(e => `
+        document.getElementById('historyList').innerHTML = entries.slice(0, 5).map(e => `
             <div class="row">
                 <span>${e.desc}</span>
                 <b>MK ${e.amt.toLocaleString()}</b>
             </div>`).join('');
     }
 
-    function clearHistory() { if(confirm("Delete everything?")) { entries = []; localStorage.setItem('simple_commander_v1', "[]"); updateUI(); } }
+    function removeBasketItem(id) { basket = basket.filter(x => x.id !== id); updateUI(); }
+    function clearHistory() { if(confirm("Wipe all data?")) { entries = []; localStorage.setItem('commander_final_v1', "[]"); updateUI(); } }
     function applyTheme() { document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeBtn').innerText = theme === 'light' ? '🌙' : '☀️'; }
     function toggleTheme() { theme = (theme === 'light') ? 'dark' : 'light'; localStorage.setItem('theme', theme); applyTheme(); }
 
+    // Service Worker for App Install
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const blob = new Blob([`self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`], {type: 'text/javascript'});
