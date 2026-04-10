@@ -4,260 +4,162 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2d5a27">
-    <title>Wealth Commander MK</title>
+    <title>Wealth Commander</title>
 
-    <link rel="manifest" href='data:application/json,{"name":"Wealth Commander MK","short_name":"Commander","start_url":"index.html","display":"standalone","background_color":"#e0e5ec","theme_color":"#2d5a27","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2454/2454282.png","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/json,{"name":"Wealth Commander","short_name":"Commander","start_url":"index.html","display":"standalone","background_color":"#e0e5ec","theme_color":"#2d5a27","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2454/2454282.png","sizes":"512x512","type":"image/png"}]}'>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { 
-            --bg: #e0e5ec; --shadow: #a3b1c6; --highlight: #ffffff;
-            --accent: #2d5a27; --danger: #d32f2f; --gold: #b19470; --text: #444;
-        }
-        [data-theme="dark"] {
-            --bg: #1d2126; --shadow: #121519; --highlight: #282d34;
-            --accent: #4caf50; --text: #e0e0e0; --gold: #d4af37;
-        }
+        :root { --bg: #e0e5ec; --shadow: #a3b1c6; --highlight: #ffffff; --accent: #2d5a27; --danger: #d32f2f; --text: #444; }
+        [data-theme="dark"] { --bg: #1d2126; --shadow: #121519; --highlight: #282d34; --accent: #4caf50; --text: #e0e0e0; }
         
-        body { 
-            font-family: 'Inter', system-ui, sans-serif; 
-            background-color: var(--bg); color: var(--text); 
-            margin: 0; padding: 15px; padding-bottom: 100px;
-            transition: background-color 0.3s ease;
-            min-height: 100vh; box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+        body { font-family: sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 50px; }
+        
+        .card { 
+            background: var(--bg); border-radius: 20px; 
+            box-shadow: 7px 7px 15px var(--shadow), -7px -7px 15px var(--highlight); 
+            padding: 20px; margin-bottom: 20px; 
         }
 
-        @media (min-width: 1024px) {
-            body { display: grid; grid-template-columns: 400px 1fr 400px; gap: 30px; padding: 40px; height: 100vh; overflow: hidden; }
+        h2 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; opacity: 0.7; }
+        
+        .big-number { font-size: 2.2rem; font-weight: bold; color: var(--accent); margin: 10px 0; }
+        
+        input, select { 
+            width: 100%; border: none; padding: 15px; margin-bottom: 10px; 
+            border-radius: 12px; background: var(--bg); font-size: 16px;
+            box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight);
+            color: var(--text); box-sizing: border-box; 
         }
 
-        .neu-card {
-            background: var(--bg); border-radius: 30px;
-            box-shadow: 8px 8px 16px var(--shadow), -8px -8px 16px var(--highlight);
-            padding: 25px; margin-bottom: 25px; box-sizing: border-box;
+        button { 
+            width: 100%; padding: 15px; border: none; border-radius: 12px; 
+            background: var(--bg); color: var(--accent); font-weight: bold;
+            box-shadow: 5px 5px 10px var(--shadow), -5px -5px 10px var(--highlight);
+            cursor: pointer; margin-bottom: 10px;
         }
+        button:active { box-shadow: inset 2px 2px 5px var(--shadow); transform: scale(0.98); }
+        .btn-main { background: var(--accent); color: white; margin-top: 10px; }
 
-        .limit-header { text-align: center; border: 2px solid var(--gold); }
-        .limit-value { font-size: 2.2rem; font-weight: 900; color: var(--gold); margin: 5px 0; }
-        .warning { color: var(--danger); font-size: 0.75rem; font-weight: 800; display: none; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .del-btn { color: var(--danger); background: none; box-shadow: none; width: auto; padding: 5px 10px; margin: 0; }
 
-        label { display: block; font-size: 0.7rem; text-transform: uppercase; opacity: 0.6; margin-bottom: 10px; font-weight: 900; letter-spacing: 1px; }
-
-        input, select, textarea {
-            width: 100%; border: none; padding: 16px; margin-bottom: 15px;
-            border-radius: 15px; background: var(--bg);
-            box-shadow: inset 5px 5px 10px var(--shadow), inset -5px -5px 10px var(--highlight);
-            color: var(--text); outline: none; box-sizing: border-box; font-size: 16px;
-        }
-        textarea { resize: none; overflow: hidden; min-height: 50px; }
-
-        .btn-push {
-            width: 100%; padding: 18px; border: none; border-radius: 15px;
-            background: var(--bg); color: var(--accent); font-weight: 900;
-            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
-            cursor: pointer; text-transform: uppercase; margin-bottom: 12px;
-        }
-        .btn-push:active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight); transform: scale(0.97); }
-        .btn-checkout { background: var(--accent); color: white !important; margin-top: 15px; }
-
-        #basketList, #paidHistory { overflow-y: auto; }
-        #basketList { max-height: 300px; }
-        #paidHistory { max-height: 250px; }
-
-        .item-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px; border-radius: 15px; background: var(--bg);
-            box-shadow: 4px 4px 8px var(--shadow), -4px -4px 8px var(--highlight);
-            margin-bottom: 10px; font-size: 0.85rem;
-        }
-
-        .remove-btn {
-            background: var(--bg); border: none; color: var(--danger); font-weight: 900;
-            width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
-            box-shadow: 2px 2px 5px var(--shadow), -2px -2px 5px var(--highlight);
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; margin-left: 10px;
-        }
-
-        .theme-toggle { 
-            position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; 
-            border-radius: 50%; background: var(--bg); border: none; 
-            box-shadow: 4px 4px 10px var(--shadow), -4px -4px 10px var(--highlight); 
-            z-index: 1000; font-size: 1.2rem; cursor: pointer;
-        }
+        .help-text { font-size: 0.8rem; opacity: 0.6; text-align: center; margin-top: 30px; line-height: 1.5; }
+        .theme-btn { position: fixed; top: 15px; right: 15px; width: 40px; height: 40px; border-radius: 50%; z-index: 100; }
     </style>
 </head>
 <body>
 
-<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
+<button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
-<div class="column">
-    <div class="neu-card limit-header">
-        <label>Daily Budget (Post-Basket)</label>
-        <div class="limit-value">MK <span id="dailyDisplay">0</span></div>
-        <div id="overLimitMsg" class="warning">🚨 BASKET EXCEEDS DAILY LIMIT</div>
-    </div>
-    <div class="neu-card">
-        <label>Add Item to Basket</label>
-        <input type="number" id="amt" placeholder="Price (MK)" inputmode="decimal">
-        <textarea id="desc" placeholder="Item Name/Details..." oninput="autoExpand(this)"></textarea>
-        <select id="cat">
-            <option value="Food">🍱 Food / Groceries</option>
-            <option value="Transport">⛽ Transport</option>
-            <option value="Other">🌀 Miscellaneous</option>
-        </select>
-        <button class="btn-push" onclick="addToBasket()">🛒 Add to Basket</button>
-        <label style="margin-top: 25px;">Monthly Goal</label>
-        <input type="number" id="monthlyGoal" value="200000" oninput="updateUI()">
-    </div>
+<div class="card" style="text-align: center; border: 2px solid var(--accent);">
+    <h2>Today's Safe Spending</h2>
+    <div class="big-number">MK <span id="dailyDisplay">0</span></div>
+    <p id="statusMsg" style="font-size: 0.8rem; font-weight: bold;"></p>
 </div>
 
-<div class="column">
-    <div class="neu-card" style="display: flex; flex-direction: column; min-height: 400px;">
-        <label>Live Basket Tally <span id="basketCount" style="float:right; color:var(--accent)">0 Items</span></label>
-        <div id="basketTotal" style="font-size: 2rem; font-weight: 800; margin: 15px 0;">MK 0</div>
-        <div id="basketList"></div>
-        <div style="margin-top: auto; padding-top: 15px;">
-            <button class="btn-push btn-checkout" id="checkoutBtn" onclick="checkout()" style="display:none;">💳 Pay & Record Ledger</button>
-            <button class="btn-push" style="color:var(--danger); font-size: 0.7rem; box-shadow: none;" onclick="clearBasket()">Discard Basket</button>
-        </div>
-    </div>
+<div class="card">
+    <h2>Add to Basket</h2>
+    <input type="number" id="amt" placeholder="Enter Price (MK)" inputmode="decimal">
+    <input type="text" id="desc" placeholder="What are you buying?">
+    <select id="cat">
+        <option value="Food">🍱 Food / Groceries</option>
+        <option value="Transport">⛽ Transport</option>
+        <option value="Other">🌀 Other</option>
+    </select>
+    <button class="btn-main" onclick="addToBasket()">+ Add Item</button>
 </div>
 
-<div class="column">
-    <div class="neu-card">
-        <label>Monthly Paid Total</label>
-        <div style="font-size: 1.8rem; font-weight: 900; color: var(--accent);">MK <span id="totalPaid">0</span></div>
-        <div style="height: 180px; margin-top: 20px;"><canvas id="mainChart"></canvas></div>
-    </div>
-    <div class="neu-card">
-        <label>Paid History (Ledger)</label>
-        <div id="paidHistory"></div>
-        <button class="btn-push" id="clearHistoryBtn" style="color:var(--danger); font-size: 0.7rem; margin-top: 15px; border-radius: 10px; display:none;" onclick="clearHistory()">🗑️ Wipe All History</button>
-    </div>
+<div class="card">
+    <h2>Items in Hand (<span id="count">0</span>)</h2>
+    <div id="basketTotal" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">Total: MK 0</div>
+    <div id="basketList"></div>
+    <button class="btn-main" id="payBtn" style="display:none; background: #2d5a27;" onclick="checkout()">✅ Confirm Purchase</button>
+</div>
+
+<div class="card">
+    <h2>Settings</h2>
+    <label style="font-size: 0.7rem;">Monthly Spending Limit:</label>
+    <input type="number" id="monthlyGoal" value="200000" oninput="updateUI()">
+</div>
+
+<div class="card">
+    <h2>Purchase History</h2>
+    <div id="historyList"></div>
+    <button class="del-btn" style="width:100%; margin-top:15px;" onclick="clearHistory()">Clear All History</button>
+</div>
+
+<div class="help-text">
+    <b>To install on your phone:</b><br>
+    iPhone: Tap Share -> "Add to Home Screen"<br>
+    Android: Tap 3 dots -> "Install App"
 </div>
 
 <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            const swCode = `self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));`;
-            const blob = new Blob([swCode], {type: 'text/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
-        });
-    }
-
-    function autoExpand(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
-
-    let entries = JSON.parse(localStorage.getItem('commander_ledger_v12') || "[]");
+    // App Logic
+    let entries = JSON.parse(localStorage.getItem('simple_commander_v1') || "[]");
     let basket = [];
-    let currentTheme = localStorage.getItem('commander_theme') || 'light';
-    let chart;
+    let theme = localStorage.getItem('theme') || 'light';
 
-    window.onload = () => {
-        applyTheme();
-        initChart();
-        updateUI();
-    };
-
-    function initChart() {
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        chart = new Chart(ctx, {
-            type: 'doughnut',
-            data: { labels: ['Food', 'Transport', 'Other'], datasets: [{ data: [1,1,1], backgroundColor: ['#2d5a27', '#6c757d', '#b19470'], borderWidth: 0 }] },
-            options: { cutout: '80%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
-        });
-    }
+    window.onload = () => { applyTheme(); updateUI(); };
 
     function addToBasket() {
         const a = document.getElementById('amt'), d = document.getElementById('desc');
-        const amt = parseFloat(a.value);
-        if (!amt) return;
-        basket.push({ id: Date.now(), amt, desc: d.value || "Item", cat: document.getElementById('cat').value });
-        a.value = ''; d.value = ''; d.style.height = 'auto';
-        updateUI();
-    }
-
-    function removeFromBasket(id) { basket = basket.filter(i => i.id !== id); updateUI(); }
-
-    function removeFromHistory(id) {
-        if(confirm("Delete this entry from history?")) {
-            entries = entries.filter(e => e.id !== id);
-            saveAndRefresh();
-        }
-    }
-
-    function clearBasket() { if(confirm("Empty basket?")) { basket = []; updateUI(); } }
-
-    function clearHistory() {
-        if(confirm("⚠️ This will wipe your entire month's data. Proceed?")) {
-            entries = [];
-            saveAndRefresh();
-        }
-    }
-
-    function saveAndRefresh() {
-        localStorage.setItem('commander_ledger_v12', JSON.stringify(entries));
-        updateUI();
+        if (!a.value) return;
+        basket.push({ id: Date.now(), amt: parseFloat(a.value), desc: d.value || "Item", cat: document.getElementById('cat').value });
+        a.value = ''; d.value = ''; updateUI();
     }
 
     function checkout() {
         basket.forEach(i => entries.unshift({ ...i, timestamp: Date.now() }));
-        saveAndRefresh();
-        basket = [];
-        updateUI();
-        alert("Mission Confirmed.");
+        localStorage.setItem('simple_commander_v1', JSON.stringify(entries));
+        basket = []; updateUI();
+        alert("Saved to history!");
     }
 
     function updateUI() {
         const goal = parseFloat(document.getElementById('monthlyGoal').value) || 0;
         const now = new Date();
         const paidThisMonth = entries.filter(e => new Date(e.timestamp).getMonth() === now.getMonth());
+        
         const totalPaid = paidThisMonth.reduce((s, e) => s + e.amt, 0);
         const basketTotal = basket.reduce((s, e) => s + e.amt, 0);
         const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
+        
         const daily = Math.floor((goal - totalPaid - basketTotal) / daysLeft);
 
         document.getElementById('dailyDisplay').innerText = daily.toLocaleString();
-        document.getElementById('totalPaid').innerText = totalPaid.toLocaleString();
-        document.getElementById('basketTotal').innerText = `MK ${basketTotal.toLocaleString()}`;
-        document.getElementById('basketCount').innerText = basket.length;
-        document.getElementById('overLimitMsg').style.display = daily < 0 ? 'block' : 'none';
-        document.getElementById('checkoutBtn').style.display = basket.length > 0 ? 'block' : 'none';
-        document.getElementById('clearHistoryBtn').style.display = entries.length > 0 ? 'block' : 'none';
+        document.getElementById('basketTotal').innerText = `Total: MK ${basketTotal.toLocaleString()}`;
+        document.getElementById('count').innerText = basket.length;
+        document.getElementById('payBtn').style.display = basket.length > 0 ? 'block' : 'none';
+        
+        const msg = document.getElementById('statusMsg');
+        if (daily < 0) { msg.innerText = "⚠️ YOU ARE OVER BUDGET!"; msg.style.color = "red"; }
+        else { msg.innerText = "You are doing great!"; msg.style.color = "var(--accent)"; }
 
-        // Render Basket
         document.getElementById('basketList').innerHTML = basket.map(i => `
-            <div class="item-row">
-                <div style="flex:1;"><b>${i.desc}</b><br>MK ${i.amt.toLocaleString()}</div>
-                <button class="remove-btn" onclick="removeFromBasket(${i.id})">✕</button>
-            </div>
-        `).join('') || '<p style="text-align:center; opacity:0.3; margin-top:20px;">Basket Empty</p>';
+            <div class="row">
+                <span>${i.desc} (MK ${i.amt})</span>
+                <button class="del-btn" onclick="basket = basket.filter(x => x.id !== ${i.id}); updateUI();">✕</button>
+            </div>`).join('');
 
-        // Render History
-        document.getElementById('paidHistory').innerHTML = paidThisMonth.slice(0, 10).map(e => `
-            <div class="item-row" style="box-shadow: none; border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 0;">
-                <div style="flex:1;"><span>${e.desc}</span><br><b>MK ${e.amt.toLocaleString()}</b></div>
-                <button class="remove-btn" style="box-shadow: none; font-size: 0.6rem;" onclick="removeFromHistory(${e.id})">✕</button>
-            </div>`).join('') || '<p style="text-align:center; opacity:0.3;">No history.</p>';
-
-        let t = { Food: 0, Transport: 0, Other: 0 };
-        paidThisMonth.forEach(e => t[e.cat] += e.amt);
-        chart.data.datasets[0].data = [t.Food, t.Transport, t.Other];
-        chart.update();
+        document.getElementById('historyList').innerHTML = paidThisMonth.slice(0, 5).map(e => `
+            <div class="row">
+                <span>${e.desc}</span>
+                <b>MK ${e.amt.toLocaleString()}</b>
+            </div>`).join('');
     }
 
-    function applyTheme() {
-        document.documentElement.setAttribute('data-theme', currentTheme);
-        document.getElementById('themeBtn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
-    }
+    function clearHistory() { if(confirm("Delete everything?")) { entries = []; localStorage.setItem('simple_commander_v1', "[]"); updateUI(); } }
+    function applyTheme() { document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeBtn').innerText = theme === 'light' ? '🌙' : '☀️'; }
+    function toggleTheme() { theme = (theme === 'light') ? 'dark' : 'light'; localStorage.setItem('theme', theme); applyTheme(); }
 
-    function toggleTheme() {
-        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-        localStorage.setItem('commander_theme', currentTheme);
-        applyTheme();
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            const blob = new Blob([`self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`], {type: 'text/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+        });
     }
 </script>
 </body>
