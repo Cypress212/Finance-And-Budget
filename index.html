@@ -10,80 +10,115 @@
     <link rel="manifest" href='data:application/json,{"name":"Wealth Commander","short_name":"Commander","start_url":"index.html","display":"standalone","background_color":"#e0e5ec","theme_color":"#2d5a27","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2454/2454282.png","sizes":"512x512","type":"image/png"}]}'>
 
     <style>
-        :root { --bg: #e0e5ec; --shadow: #a3b1c6; --highlight: #ffffff; --accent: #2d5a27; --danger: #d32f2f; --text: #444; }
-        [data-theme="dark"] { --bg: #1d2126; --shadow: #121519; --highlight: #282d34; --accent: #4caf50; --text: #e0e0e0; }
+        :root { 
+            --bg: #e0e5ec; --shadow: #a3b1c6; --highlight: #ffffff; 
+            --accent: #2d5a27; --danger: #d32f2f; --text: #444; 
+        }
+        [data-theme="dark"] { 
+            --bg: #1d2126; --shadow: #121519; --highlight: #282d34; 
+            --accent: #4caf50; --text: #e0e0e0; 
+        }
         
-        body { font-family: sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 50px; transition: 0.3s; }
-        
-        .card { 
-            background: var(--bg); border-radius: 20px; 
-            box-shadow: 7px 7px 15px var(--shadow), -7px -7px 15px var(--highlight); 
-            padding: 20px; margin-bottom: 20px; 
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg); color: var(--text); 
+            margin: 0; padding: 20px; transition: 0.3s; 
+            min-height: 100vh; display: flex; justify-content: center;
         }
 
-        h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; opacity: 0.7; }
-        .big-number { font-size: 2.5rem; font-weight: 900; color: var(--accent); margin: 10px 0; }
+        /* Responsive Grid System */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 900px) {
+            .container { grid-template-columns: 400px 1fr; }
+            .sticky-col { position: sticky; top: 20px; height: fit-content; }
+        }
+
+        .card { 
+            background: var(--bg); border-radius: 25px; 
+            box-shadow: 8px 8px 16px var(--shadow), -8px -8px 16px var(--highlight); 
+            padding: 25px; margin-bottom: 20px; box-sizing: border-box;
+        }
+
+        h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 0; opacity: 0.6; }
+        .big-number { font-size: 3rem; font-weight: 900; color: var(--accent); margin: 10px 0; }
         
-        input { 
-            width: 100%; border: none; padding: 15px; margin-bottom: 10px; 
-            border-radius: 12px; background: var(--bg); font-size: 16px;
-            box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--highlight);
-            color: var(--text); box-sizing: border-box; 
+        input, select { 
+            width: 100%; border: none; padding: 15px; margin-bottom: 12px; 
+            border-radius: 15px; background: var(--bg); font-size: 16px;
+            box-shadow: inset 5px 5px 10px var(--shadow), inset -5px -5px 10px var(--highlight);
+            color: var(--text); box-sizing: border-box; outline: none;
         }
 
         button { 
-            width: 100%; padding: 16px; border: none; border-radius: 12px; 
+            width: 100%; padding: 18px; border: none; border-radius: 15px; 
             background: var(--bg); color: var(--accent); font-weight: bold;
-            box-shadow: 5px 5px 10px var(--shadow), -5px -5px 10px var(--highlight);
-            cursor: pointer; margin-bottom: 10px; text-transform: uppercase;
+            box-shadow: 6px 6px 12px var(--shadow), -6px -6px 12px var(--highlight);
+            cursor: pointer; margin-bottom: 12px; text-transform: uppercase; transition: 0.2s;
         }
-        button:active { box-shadow: inset 2px 2px 5px var(--shadow); transform: scale(0.98); }
-        .btn-main { background: var(--accent); color: white; margin-top: 10px; }
+        button:active { box-shadow: inset 3px 3px 6px var(--shadow); transform: scale(0.98); }
+        .btn-main { background: var(--accent); color: white; border: 1px solid rgba(255,255,255,0.1); }
 
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .del-btn { color: var(--danger); background: none; box-shadow: none; width: auto; padding: 5px 10px; margin: 0; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 12px; margin-bottom: 8px; background: rgba(0,0,0,0.02); }
+        .del-btn { color: var(--danger); background: none; box-shadow: none; width: auto; padding: 5px 10px; margin: 0; font-size: 1.2rem; }
 
-        .theme-btn { position: fixed; top: 15px; right: 15px; width: 45px; height: 45px; border-radius: 50%; z-index: 100; font-size: 1.2rem; }
+        .theme-btn { position: fixed; top: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; z-index: 100; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; }
+        
+        #historyList { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+        
+        .badge { font-size: 0.7rem; padding: 4px 8px; border-radius: 20px; background: var(--accent); color: white; margin-left: 10px; }
     </style>
 </head>
 <body>
 
 <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
-<div class="card" style="text-align: center; border: 3px solid var(--accent); margin-top: 40px;">
-    <h2>Daily Budget Left</h2>
-    <div class="big-number">MK <span id="dailyDisplay">0</span></div>
-    <div id="mathBreakdown" style="font-size: 0.7rem; opacity: 0.6;">Calculating...</div>
-</div>
+<div class="container">
+    <div class="sticky-col">
+        <div class="card" style="text-align: center; border: 3px solid var(--accent);">
+            <h2>Daily Safe Spending</h2>
+            <div class="big-number">MK <span id="dailyDisplay">0</span></div>
+            <div id="mathBreakdown" style="font-size: 0.8rem; opacity: 0.7; font-weight: bold;">---</div>
+        </div>
 
-<div class="card">
-    <h2>Add to Basket</h2>
-    <input type="number" id="amt" placeholder="Price (MK)" inputmode="decimal">
-    <input type="text" id="desc" placeholder="Item Name">
-    <button class="btn-main" onclick="addToBasket()">🛒 Add Item</button>
-</div>
+        <div class="card">
+            <h2>Add to Basket</h2>
+            <input type="number" id="amt" placeholder="Price (MK)" inputmode="decimal">
+            <input type="text" id="desc" placeholder="What are you buying?">
+            <button class="btn-main" onclick="addToBasket()">🛒 Add to Basket</button>
+        </div>
 
-<div class="card">
-    <h2>Current Basket (<span id="count">0</span>)</h2>
-    <div id="basketTotal" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: var(--danger);">Basket: MK 0</div>
-    <div id="basketList"></div>
-    <button class="btn-main" id="payBtn" style="display:none; background: #2d5a27;" onclick="checkout()">💳 Confirm Payment</button>
-</div>
+        <div class="card">
+            <h2>Target Settings</h2>
+            <label style="font-size: 0.7rem; display: block; margin-bottom: 5px;">Monthly Budget Goal:</label>
+            <input type="number" id="monthlyGoal" value="200000" oninput="updateUI()">
+        </div>
+    </div>
 
-<div class="card">
-    <h2>Monthly Settings</h2>
-    <label style="font-size: 0.7rem;">Goal for the Month (MK):</label>
-    <input type="number" id="monthlyGoal" value="200000" oninput="updateUI()">
-</div>
+    <div>
+        <div class="card" style="min-height: 300px;">
+            <h2>Current Basket <span class="badge" id="count">0</span></h2>
+            <div id="basketTotal" style="font-size: 1.5rem; font-weight: 800; margin-bottom: 20px; color: var(--danger);">Total: MK 0</div>
+            <div id="basketList"></div>
+            <button class="btn-main" id="payBtn" style="display:none; background: #2d5a27; margin-top: 20px;" onclick="checkout()">✅ Confirm Payment & Record</button>
+        </div>
 
-<div class="card">
-    <h2>Today's History</h2>
-    <div id="historyList"></div>
-    <button class="del-btn" style="width:100%; margin-top:20px; font-size: 0.7rem;" onclick="clearHistory()">Clear History</button>
+        <div class="card">
+            <h2>Ledger History</h2>
+            <div id="historyList"></div>
+            <button class="del-btn" style="width:100%; margin-top:30px; font-size: 0.8rem; opacity: 0.5;" onclick="clearHistory()">🗑️ Wipe All Ledger Data</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    let entries = JSON.parse(localStorage.getItem('commander_final_v1') || "[]");
+    let entries = JSON.parse(localStorage.getItem('commander_pc_v1') || "[]");
     let basket = [];
     let theme = localStorage.getItem('theme') || 'light';
 
@@ -97,69 +132,66 @@
     }
 
     function checkout() {
+        if(basket.length === 0) return;
         basket.forEach(i => entries.unshift({ ...i, timestamp: Date.now() }));
-        localStorage.setItem('commander_final_v1', JSON.stringify(entries));
+        localStorage.setItem('commander_pc_v1', JSON.stringify(entries));
         basket = []; updateUI();
-        alert("Purchase recorded!");
+    }
+
+    function removeFromHistory(id) {
+        if(confirm("Delete this specific record?")) {
+            entries = entries.filter(e => e.id !== id);
+            localStorage.setItem('commander_pc_v1', JSON.stringify(entries));
+            updateUI();
+        }
     }
 
     function updateUI() {
         const goal = parseFloat(document.getElementById('monthlyGoal').value) || 0;
         const now = new Date();
-        
-        // 1. Calculate how much was already spent this month
         const spentThisMonth = entries
             .filter(e => new Date(e.timestamp).getMonth() === now.getMonth())
             .reduce((s, e) => s + e.amt, 0);
 
-        // 2. Calculate current basket total
         const basketTotal = basket.reduce((s, e) => s + e.amt, 0);
+        const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
         
-        // 3. Calculate days left in month (including today)
-        const totalDaysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysLeft = (totalDaysInMonth - now.getDate()) + 1;
-        
-        // 4. THE CORRECT MATH:
-        // (Monthly Goal - Total Spent) / Days Left - Current Basket
         const dailyAllowance = (goal - spentThisMonth) / daysLeft;
         const finalDaily = Math.floor(dailyAllowance - basketTotal);
 
-        // Display
+        // UI Text
         document.getElementById('dailyDisplay').innerText = finalDaily.toLocaleString();
-        document.getElementById('basketTotal').innerText = `Basket: MK ${basketTotal.toLocaleString()}`;
+        document.getElementById('basketTotal').innerText = `Basket Total: MK ${basketTotal.toLocaleString()}`;
         document.getElementById('count').innerText = basket.length;
         document.getElementById('payBtn').style.display = basket.length > 0 ? 'block' : 'none';
-        
-        document.getElementById('mathBreakdown').innerText = 
-            `Remaining: MK ${(goal - spentThisMonth).toLocaleString()} ÷ ${daysLeft} days`;
+        document.getElementById('mathBreakdown').innerText = `Left: MK ${(goal - spentThisMonth).toLocaleString()} over ${daysLeft} days`;
 
-        // Style change if over budget
-        const display = document.getElementById('dailyDisplay');
-        display.style.color = finalDaily < 0 ? "var(--danger)" : "var(--accent)";
+        // Color Warning
+        document.getElementById('dailyDisplay').style.color = finalDaily < 0 ? "var(--danger)" : "var(--accent)";
 
         // Lists
         document.getElementById('basketList').innerHTML = basket.map(i => `
             <div class="row">
-                <span>${i.desc} - MK ${i.amt.toLocaleString()}</span>
-                <button class="del-btn" onclick="removeBasketItem(${i.id})">✕</button>
-            </div>`).join('');
+                <span><b>${i.desc}</b> — MK ${i.amt.toLocaleString()}</span>
+                <button class="del-btn" onclick="basket = basket.filter(x => x.id !== ${i.id}); updateUI();">✕</button>
+            </div>`).join('') || '<p style="opacity:0.4; text-align:center;">Your basket is empty</p>';
 
-        document.getElementById('historyList').innerHTML = entries.slice(0, 5).map(e => `
-            <div class="row">
-                <span>${e.desc}</span>
-                <b>MK ${e.amt.toLocaleString()}</b>
-            </div>`).join('');
+        document.getElementById('historyList').innerHTML = entries.map(e => `
+            <div class="row" style="background: rgba(0,0,0,0.05);">
+                <span>${e.desc}<br><small>MK ${e.amt.toLocaleString()}</small></span>
+                <button class="del-btn" style="font-size:0.8rem;" onclick="removeFromHistory(${e.id})">✕</button>
+            </div>`).join('') || '<p style="opacity:0.4; text-align:center;">No history recorded</p>';
     }
 
-    function removeBasketItem(id) { basket = basket.filter(x => x.id !== id); updateUI(); }
-    function clearHistory() { if(confirm("Wipe all data?")) { entries = []; localStorage.setItem('commander_final_v1', "[]"); updateUI(); } }
+    function clearHistory() { if(confirm("Wipe all data forever?")) { entries = []; localStorage.setItem('commander_pc_v1', "[]"); updateUI(); } }
     function applyTheme() { document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeBtn').innerText = theme === 'light' ? '🌙' : '☀️'; }
     function toggleTheme() { theme = (theme === 'light') ? 'dark' : 'light'; localStorage.setItem('theme', theme); applyTheme(); }
 
-    // Service Worker for App Install
+    // UNIVERSAL INSTALLATION ENGINE
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            const blob = new Blob([`self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`], {type: 'text/javascript'});
+            const swCode = `self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`;
+            const blob = new Blob([swCode], {type: 'text/javascript'});
             navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
         });
     }
