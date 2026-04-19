@@ -4,107 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
-    <title>Commander MK Ultra</title>
+    <meta name="theme-color" content="#10b981">
+    <title>Commander MK</title>
 
-    <link rel="manifest" href='data:application/json,{"name":"Commander MK","short_name":"Commander","start_url":"index.html","display":"standalone","background_color":"#000000","theme_color":"#10b981","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2454/2454282.png","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/json,{"name":"Commander MK","short_name":"Commander","start_url":"index.html","display":"standalone","background_color":"#fdfcf8","theme_color":"#10b981","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2454/2454282.png","sizes":"512x512","type":"image/png"}]}'>
 
     <style>
+        /* The "No-Overflow" Reset */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         :root {
-            --glass: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --accent: #10b981; /* Neon Green */
+            --bg: #fdfcf8; /* Warm welcoming cream */
+            --card: #ffffff;
+            --border: rgba(0, 0, 0, 0.08);
+            --accent: #10b981; /* Fresh mint green */
+            --text-main: #1e293b;
+            --text-dim: #64748b;
             --danger: #ef4444;
-            --text: #ffffff;
-            --bg: #0f172a;
+            --shadow: rgba(0, 0, 0, 0.04);
         }
 
-        [data-theme="light"] {
-            --glass: rgba(0, 0, 0, 0.05);
-            --glass-border: rgba(0, 0, 0, 0.1);
-            --accent: #059669;
-            --text: #1e293b;
-            --bg: #f8fafc;
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --border: rgba(255, 255, 255, 0.1);
+            --accent: #34d399;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --shadow: rgba(0, 0, 0, 0.2);
         }
 
         body {
             margin: 0; padding: 0;
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background-color: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-main);
+            transition: background 0.3s ease;
             display: flex; justify-content: center;
         }
 
         .dashboard {
             width: 100%; max-width: 1200px;
-            padding: 20px;
+            padding: 15px;
             display: grid; grid-template-columns: 1fr; gap: 20px;
         }
 
         @media (min-width: 1024px) {
-            .dashboard { grid-template-columns: 380px 1fr; padding: 40px; }
+            .dashboard { grid-template-columns: 400px 1fr; padding: 40px; }
             .sticky-side { position: sticky; top: 40px; height: fit-content; }
         }
 
-        /* Glassmorphism Card */
-        .glass-card {
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
             border-radius: 24px;
             padding: 24px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s ease;
+            box-shadow: 0 4px 12px var(--shadow);
+            width: 100%; /* Ensures it stays inside parent */
+            overflow: hidden; /* Clips anything trying to cross borders */
         }
 
-        .glass-card:hover { transform: translateY(-4px); }
-
-        h2 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 0; opacity: 0.6; }
+        h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.2px; margin: 0 0 15px 0; color: var(--text-dim); }
         
-        .budget-value { font-size: 3.5rem; font-weight: 900; letter-spacing: -2px; margin: 10px 0; }
+        .budget-value { font-size: 3rem; font-weight: 800; letter-spacing: -1.5px; margin: 5px 0; }
 
-        input, select {
-            width: 100%; border: 1px solid var(--glass-border); padding: 16px; 
-            margin-bottom: 12px; border-radius: 16px; background: rgba(255,255,255,0.05);
-            color: var(--text); font-size: 16px; outline: none; transition: 0.3s;
+        input {
+            width: 100%; border: 1px solid var(--border); padding: 16px; 
+            margin-bottom: 12px; border-radius: 16px; background: var(--bg);
+            color: var(--text-main); font-size: 16px; outline: none; transition: 0.2s;
         }
 
-        input:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
+        input:focus { border-color: var(--accent); ring: 2px var(--accent); }
 
         .btn {
             width: 100%; padding: 18px; border: none; border-radius: 16px;
-            font-weight: 700; cursor: pointer; transition: 0.3s;
-            text-transform: uppercase; letter-spacing: 1px;
+            font-weight: 700; cursor: pointer; transition: 0.2s;
+            text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem;
         }
 
-        .btn-primary { background: var(--accent); color: white; box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
-        .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
-        .btn-primary:active { transform: scale(0.96); }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:active { transform: scale(0.97); filter: brightness(0.9); }
 
         .item-row {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 16px; border-radius: 16px; background: var(--glass);
-            margin-bottom: 10px; animation: slideIn 0.3s ease-out;
+            padding: 14px; border-radius: 16px; background: var(--bg);
+            border: 1px solid var(--border); margin-bottom: 10px;
+            width: 100%;
         }
 
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        .item-info { flex: 1; min-width: 0; padding-right: 10px; }
+        .item-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+        .item-info small { color: var(--text-dim); font-size: 0.75rem; }
 
-        .del-btn { background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 5px; }
+        .del-btn { background: none; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; padding: 8px; font-weight: bold; }
 
         .theme-toggle {
-            position: fixed; top: 20px; right: 20px; width: 48px; height: 48px;
-            border-radius: 50%; background: var(--glass); border: 1px solid var(--glass-border);
-            color: var(--text); cursor: pointer; z-index: 1000; font-size: 1.2rem;
+            position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px;
+            border-radius: 50%; background: var(--card); border: 1px solid var(--border);
+            color: var(--text-main); cursor: pointer; z-index: 1000; font-size: 1.4rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
             display: flex; align-items: center; justify-content: center;
         }
 
-        .progress-bar {
-            height: 8px; width: 100%; background: var(--glass-border); border-radius: 4px; overflow: hidden; margin: 15px 0;
-        }
-        .progress-fill { height: 100%; background: var(--accent); transition: 0.5s ease; }
+        .progress-track { height: 6px; width: 100%; background: var(--border); border-radius: 10px; margin: 15px 0; }
+        .progress-bar { height: 100%; background: var(--accent); border-radius: 10px; transition: 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
     </style>
 </head>
 <body>
@@ -113,59 +118,60 @@
 
 <div class="dashboard">
     <div class="sticky-side">
-        <div class="glass-card" style="text-align: center; border-bottom: 4px solid var(--accent);">
-            <h2>Daily Allowance</h2>
+        <div class="card" style="border-top: 5px solid var(--accent);">
+            <h2>Daily Budget Left</h2>
             <div class="budget-value" id="dailyDisplay">0</div>
-            <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
-            <div id="mathInfo" style="font-size: 0.8rem; opacity: 0.5;">Calculating mission parameters...</div>
+            <div class="progress-track"><div class="progress-bar" id="progBar"></div></div>
+            <div id="mathLabel" style="font-size: 0.8rem; color: var(--text-dim);">Ready for calculation.</div>
         </div>
 
-        <div class="glass-card" style="margin-top: 20px;">
-            <h2>Deploy Funds</h2>
+        <div class="card" style="margin-top: 20px;">
+            <h2>Deployment</h2>
             <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
-            <input type="text" id="desc" placeholder="Target description">
+            <input type="text" id="desc" placeholder="Item/Description">
             <button class="btn btn-primary" onclick="addToBasket()">🛒 Add to Basket</button>
         </div>
 
-        <div class="glass-card" style="margin-top: 20px;">
-            <h2>Mission Goal</h2>
+        <div class="card" style="margin-top: 20px;">
+            <h2>Monthly Target</h2>
             <input type="number" id="monthlyGoal" value="200000" oninput="updateUI()">
         </div>
     </div>
 
     <div>
-        <div class="glass-card" style="min-height: 250px;">
-            <h2>Live Basket</h2>
-            <div id="basketTotal" style="font-size: 1.8rem; font-weight: 800; color: var(--accent); margin-bottom: 20px;">MK 0</div>
+        <div class="card">
+            <h2 id="basketHeader">Live Basket (0)</h2>
+            <div id="basketTotal" style="font-size: 1.5rem; font-weight: 800; color: var(--accent); margin-bottom: 20px;">MK 0</div>
             <div id="basketList"></div>
-            <button class="btn btn-primary" id="payBtn" style="display:none; margin-top: 20px;" onclick="checkout()">🚀 Confirm Transaction</button>
+            <button class="btn btn-primary" id="payBtn" style="display:none; margin-top: 15px;" onclick="checkout()">🚀 Confirm Purchase</button>
         </div>
 
-        <div class="glass-card" style="margin-top: 20px;">
-            <h2>Recent Operations</h2>
-            <div id="historyList"></div>
-            <button onclick="clearHistory()" style="background:none; border:none; color:var(--danger); width:100%; margin-top:20px; font-size:0.7rem; cursor:pointer; opacity:0.5;">WIPE DATA CACHE</button>
+        <div class="card" style="margin-top: 20px;">
+            <h2>Operation History</h2>
+            <div id="historyList" class="history-grid"></div>
+            <button onclick="clearHistory()" style="background:none; border:none; color:var(--danger); width:100%; margin-top:20px; font-size:0.7rem; cursor:pointer; font-weight: bold; opacity: 0.6;">WIPE ALL SYSTEM DATA</button>
         </div>
     </div>
 </div>
 
 <script>
-    let entries = JSON.parse(localStorage.getItem('commander_lit_v1') || "[]");
+    let entries = JSON.parse(localStorage.getItem('commander_v2_perfect') || "[]");
     let basket = [];
-    let theme = localStorage.getItem('theme') || 'dark';
+    let theme = localStorage.getItem('commander_theme') || 'light';
 
     window.onload = () => { applyTheme(); updateUI(); };
 
     function addToBasket() {
         const a = document.getElementById('amt'), d = document.getElementById('desc');
         if (!a.value || a.value <= 0) return;
-        basket.push({ id: Date.now(), amt: parseFloat(a.value), desc: d.value || "Supply Drop" });
+        basket.push({ id: Date.now(), amt: parseFloat(a.value), desc: d.value || "General Item" });
         a.value = ''; d.value = ''; updateUI();
     }
 
     function checkout() {
+        if(basket.length === 0) return;
         basket.forEach(i => entries.unshift({ ...i, timestamp: Date.now() }));
-        localStorage.setItem('commander_lit_v1', JSON.stringify(entries));
+        localStorage.setItem('commander_v2_perfect', JSON.stringify(entries));
         basket = []; updateUI();
     }
 
@@ -182,40 +188,46 @@
         const dailyAllowance = (goal - spentThisMonth) / daysLeft;
         const finalDaily = Math.floor(dailyAllowance - basketTotal);
 
-        // UI Updates
+        // UI
         const display = document.getElementById('dailyDisplay');
         display.innerText = finalDaily.toLocaleString();
         display.style.color = finalDaily < 0 ? 'var(--danger)' : 'var(--accent)';
 
         document.getElementById('basketTotal').innerText = `MK ${basketTotal.toLocaleString()}`;
+        document.getElementById('basketHeader').innerText = `Live Basket (${basket.length})`;
         document.getElementById('payBtn').style.display = basket.length > 0 ? 'block' : 'none';
-        document.getElementById('mathInfo').innerText = `MK ${(goal - spentThisMonth).toLocaleString()} remaining • ${daysLeft} days left`;
+        document.getElementById('mathLabel').innerText = `MK ${(goal - spentThisMonth).toLocaleString()} left this month • ${daysLeft} days remaining`;
 
-        // Progress Bar
+        // Progress
         const percent = Math.min(100, Math.max(0, (spentThisMonth / goal) * 100));
-        document.getElementById('progFill').style.width = percent + '%';
+        document.getElementById('progBar').style.width = percent + '%';
 
         // Lists
         document.getElementById('basketList').innerHTML = basket.map(i => `
             <div class="item-row">
-                <span><b>${i.desc}</b><br><small>MK ${i.amt.toLocaleString()}</small></span>
+                <div class="item-info"><span>${i.desc}</span><small>MK ${i.amt.toLocaleString()}</small></div>
                 <button class="del-btn" onclick="basket = basket.filter(x => x.id !== ${i.id}); updateUI();">✕</button>
-            </div>`).join('');
+            </div>`).join('') || '<p style="opacity:0.4; text-align:center; font-size:0.9rem;">Basket is empty</p>';
 
-        document.getElementById('historyList').innerHTML = entries.slice(0, 10).map(e => `
-            <div class="item-row" style="background: rgba(255,255,255,0.02)">
-                <span>${e.desc}<br><small>${new Date(e.timestamp).toLocaleDateString()}</small></span>
-                <b>MK ${e.amt.toLocaleString()}</b>
+        document.getElementById('historyList').innerHTML = entries.slice(0, 12).map(e => `
+            <div class="item-row" style="background:transparent">
+                <div class="item-info"><span>${e.desc}</span><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
+                <b style="color:var(--text-main)">MK ${e.amt.toLocaleString()}</b>
             </div>`).join('');
     }
 
-    function clearHistory() { if(confirm("Clear all logs?")) { entries = []; localStorage.setItem('commander_lit_v1', "[]"); updateUI(); } }
+    function clearHistory() { if(confirm("Wipe all data?")) { entries = []; localStorage.setItem('commander_v2_perfect', "[]"); updateUI(); } }
+    
     function applyTheme() { 
         document.documentElement.setAttribute('data-theme', theme); 
         document.getElementById('themeBtn').innerText = theme === 'light' ? '🌙' : '☀️';
-        document.body.style.backgroundColor = theme === 'dark' ? '#0f172a' : '#f8fafc';
     }
-    function toggleTheme() { theme = (theme === 'light') ? 'dark' : 'light'; localStorage.setItem('theme', theme); applyTheme(); }
+
+    function toggleTheme() { 
+        theme = (theme === 'light') ? 'dark' : 'light'; 
+        localStorage.setItem('commander_theme', theme); 
+        applyTheme(); 
+    }
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
