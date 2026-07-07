@@ -14,6 +14,7 @@
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+        /* Default Light Theme Configuration */
         :root {
             --bg: #fdfcf8;
             --card: #ffffff;
@@ -25,7 +26,8 @@
             --shadow: rgba(0, 0, 0, 0.04);
         }
 
-        [data-theme="dark"] {
+        /* Explicit Selector - Forces the dark theme override regardless of browser interpretation */
+        html[data-theme="dark"] {
             --bg: #0f172a;
             --card: #1e293b;
             --border: rgba(255, 255, 255, 0.1);
@@ -216,4 +218,146 @@
         const foreignAmount = parseFloat(foreignAmtInput.value);
         const selectedCurrency = currencySelect.value;
 
-        if (!isNaN(foreignAmount) && foreign
+        if (!isNaN(foreignAmount) && foreignAmount > 0) {
+            const convertedValue = Math.round(foreignAmount * EXCHANGE_RATES[selectedCurrency]);
+            localAmtInput.value = convertedValue;
+        } else {
+            localAmtInput.value = '';
+        }
+    }
+
+    function checkMonthlyRollover() {
+        const now = new Date();
+        const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`; 
+        const lastCheckedMonth = localStorage.getItem('commander_last_month');
+
+        if (lastCheckedMonth && lastCheckedMonth !== currentMonthKey) {
+            const parsedLastMonth = lastCheckedMonth.split('-');
+            const oldYear = parseInt(parsedLastMonth[0]);
+            const oldMonth = parseInt(parsedLastMonth[1]);
+
+            const lastMonthEntries = entries.filter(e => {
+                const d = new Date(e.timestamp);
+                return d.getFullYear() === oldYear && d.getMonth() === oldMonth;
+            });
+
+            if (lastMonthEntries.length > 0) {
+                const totalSpent = lastMonthEntries.reduce((s, e) => s + e.amt, 0);
+                const monthName = new Date(oldYear, oldMonth).toLocaleString('default', { month: 'long' });
+                
+                archives[`${monthName} ${oldYear}`] = totalSpent;
+                localStorage.setItem('commander_v4_archives', JSON.stringify(archives));
+            }
+        }
+        localStorage.setItem('commander_last_month', currentMonthKey);
+    }
+
+    function addToBasket() {
+        const a = document.getElementById('amt'), d = document.getElementById('desc');
+        const foreignAmtInput = document.getElementById('foreignAmt');
+        if (!a.value || a.value <= 0) return;
+        
+        basket.push({ id: Date.now(), amt: parseFloat(a.value), desc: d.value || "General Item" });
+        
+        a.value = ''; 
+        d.value = '';
+        foreignAmtInput.value = ''; 
+        updateUI();
+    }
+
+    function checkout() {
+        if(basket.length === 0) return;
+        basket.forEach(i => entries.unshift({ ...i, timestamp: Date.now() }));
+        localStorage.setItem('commander_v4_ledger', JSON.stringify(entries));
+        basket = []; updateUI();
+    }
+
+    function exportToCSV() {
+        if(entries.length === 0) { alert("No history data to export."); return; }
+        let csvContent = "data:text/csv;charset=utf-8,Description,Amount (MK),Date\n";
+        entries.forEach(e => {
+            const dateStr = new Date(e.timestamp).toLocaleDateString();
+            const cleanDesc = e.desc.replace(/,/g, "");
+            csvContent += `${cleanDesc},${e.amt},${dateStr}\n`;
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `wealth_commander_backup_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function importBackup(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (Array.isArray(importedData)) {
+                    entries = importedData;
+                    localStorage.setItem('commander_v4_ledger', JSON.stringify(entries));
+                    updateUI();
+                    alert("System ledger updated successfully from backup file!");
+                } else { alert("Invalid backup format."); }
+            } catch (err) { alert("Could not read backup file."); }
+        };
+        reader.readAsText(file);
+    }
+
+    function updateUI() {
+        const goal = parseFloat(document.getElementById('monthlyGoal').value) || 1;
+        const now = new Date();
+        const spentThisMonth = entries
+            .filter(e => new Date(e.timestamp).getMonth() === now.getMonth())
+            .reduce((s, e) => s + e.amt, 0);
+
+        const basketTotal = basket.reduce((s, e) => s + e.amt, 0);
+        const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
+        
+        const dailyAllowance = (goal - spentThisMonth) / daysLeft;
+        const finalDaily = Math.floor(dailyAllowance - basketTotal);
+
+        const display = document.getElementById('dailyDisplay');
+        display.innerText = finalDaily.toLocaleString();
+        display.style.color = finalDaily < 0 ? 'var(--danger)' : 'var(--accent)';
+
+        document.getElementById('basketTotal').innerText = `MK ${basketTotal.toLocaleString()}`;
+        document.getElementById('basketHeader').innerText = `Live Basket (${basket.length})`;
+        document.getElementById('payBtn').style.display = basket.length > 0 ? 'block' : 'none';
+        document.getElementById('mathLabel').innerText = `MK ${(goal - spentThisMonth).toLocaleString()} left this month • ${daysLeft} days remaining`;
+
+        const percent = Math.min(100, Math.max(0, (spentThisMonth / goal) * 100));
+        document.getElementById('progBar').style.width = percent + '%';
+
+        let archiveHtml = "<b>Past Performance:</b><br>";
+        const keys = Object.keys(archives);
+        if(keys.length === 0) archiveHtml += "No archived months yet.";
+        keys.forEach(k => { 
+            const val = archives[k];
+            const formattedVal = (typeof val === 'number') ? val.toLocaleString() : parseFloat(val || 0).toLocaleString();
+            archiveHtml += `• ${k}: MK ${formattedVal}<br>`; 
+        });
+        document.getElementById('archiveScoreboard').innerHTML = archiveHtml;
+
+        document.getElementById('basketList').innerHTML = basket.map(i => `
+            <div class="item-row">
+                <div class="item-info"><span>${i.desc}</span><small>MK ${i.amt.toLocaleString()}</small></div>
+                <button class="del-btn" onclick="basket = basket.filter(x => x.id !== ${i.id}); updateUI();">X</button>
+            </div>`).join('') || '<p style="opacity:0.4; text-align:center; font-size:0.9rem;">Basket is empty</p>';
+
+        document.getElementById('historyList').innerHTML = entries.slice(0, 12).map(e => `
+            <div class="item-row" style="background:transparent">
+                <div class="item-info"><span>${e.desc}</span><small>${new Date(e.timestamp).toLocaleDateString()}</small></div>
+                <b style="color:var(--text-main)">MK ${e.amt.toLocaleString()}</b>
+            </div>`).join('');
+    }
+
+    function clearHistory() { if(confirm("Wipe all data?")) { entries = []; localStorage.setItem('commander_v4_ledger', "[]"); updateUI(); } }
+    function applyTheme() { document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeBtn').innerText = theme === 'light' ? '🌙' : '☀️'; }
+    function toggleTheme() { theme = (theme === 'light') ? 'dark' : 'light'; localStorage.setItem('commander_theme', theme); applyTheme(); }
+</script>
+</body>
+</html>
