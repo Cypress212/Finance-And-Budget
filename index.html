@@ -132,7 +132,7 @@
             <h2>Deployment</h2>
             <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
             <input type="text" id="desc" placeholder="Item/Description">
-            <button class="btn btn-primary" onclick="addToBasket()">🛒 Add to Basket</button>
+            <button class="btn btn-primary" onclick="addToBasket()">Add to Basket</button>
         </div>
 
         <div class="card" style="margin-top: 20px;">
@@ -143,8 +143,8 @@
         <div class="card" style="margin-top: 20px;">
             <h2>Data & Backups</h2>
             <div class="flex-buttons">
-                <button class="btn btn-secondary" onclick="exportToCSV()">📥 Export CSV</button>
-                <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">📤 Import Backup</button>
+                <button class="btn btn-secondary" onclick="exportToCSV()">Export CSV</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">Import Backup</button>
             </div>
             <input type="file" id="fileInput" style="display:none" accept=".json" onchange="importBackup(event)">
             <div id="archiveScoreboard" style="margin-top: 15px; font-size: 0.75rem; color: var(--text-dim);"></div>
@@ -156,7 +156,7 @@
             <h2 id="basketHeader">Live Basket (0)</h2>
             <div id="basketTotal" style="font-size: 1.5rem; font-weight: 800; color: var(--accent); margin-bottom: 20px;">MK 0</div>
             <div id="basketList"></div>
-            <button class="btn btn-primary" id="payBtn" style="display:none; margin-top: 15px;" onclick="checkout()">🚀 Confirm Purchase</button>
+            <button class="btn btn-primary" id="payBtn" style="display:none; margin-top: 15px;" onclick="checkout()">Confirm Purchase</button>
         </div>
 
         <div class="card" style="margin-top: 20px;">
@@ -209,7 +209,7 @@
                 localStorage.setItem('commander_v4_archives', JSON.stringify(archives));
             }
             
-            alert("📅 Welcome to a new month! Your previous budget cycle has been archived automatically.");
+            alert("Welcome to a new month! Your previous budget cycle has been archived automatically.");
         }
         localStorage.setItem('commander_last_month', currentMonthKey);
     }
@@ -259,7 +259,7 @@
                     entries = importedData;
                     localStorage.setItem('commander_v4_ledger', JSON.stringify(entries));
                     updateUI();
-                    alert("✅ System ledger updated successfully from backup file!");
+                    alert("System ledger updated successfully from backup file!");
                 } else { alert("Invalid backup format."); }
             } catch (err) { alert("Could not read backup file. Make sure it's an app backup code."); }
         };
