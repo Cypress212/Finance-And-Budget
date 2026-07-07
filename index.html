@@ -9,7 +9,7 @@
     <title>Commander MK Pro</title>
 
     <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2454/2454282.png">
+    <link class="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2454/2454282.png">
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -68,12 +68,18 @@
         h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.2px; margin: 0 0 15px 0; color: var(--text-dim); }
         .budget-value { font-size: 3rem; font-weight: 800; letter-spacing: -1.5px; margin: 5px 0; }
 
-        input {
+        input, select {
             width: 100%; border: 1px solid var(--border); padding: 16px; 
             margin-bottom: 12px; border-radius: 16px; background: var(--bg);
             color: var(--text-main); font-size: 16px; outline: none; transition: 0.2s;
         }
-        input:focus { border-color: var(--accent); }
+        input:focus, select:focus { border-color: var(--accent); }
+
+        .currency-row {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 10px;
+        }
 
         .btn {
             width: 100%; padding: 18px; border: none; border-radius: 16px;
@@ -120,6 +126,7 @@
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
 <div class="dashboard">
+    <!-- LEFT PANEL -->
     <div class="sticky-side">
         <div class="card" style="border-top: 5px solid var(--accent);">
             <h2>Daily Budget Left</h2>
@@ -130,6 +137,16 @@
 
         <div class="card" style="margin-top: 20px;">
             <h2>Deployment</h2>
+            
+            <!-- Foreign Currency Conversion Helper -->
+            <div class="currency-row">
+                <select id="foreignCurrency" onchange="convertCurrency()">
+                    <option value="USD">USD</option>
+                    <option value="ZAR">ZAR</option>
+                </select>
+                <input type="number" id="foreignAmt" placeholder="Foreign Amount" inputmode="decimal" oninput="convertCurrency()">
+            </div>
+
             <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
             <input type="text" id="desc" placeholder="Item/Description">
             <button class="btn btn-primary" onclick="addToBasket()">Add to Basket</button>
@@ -151,6 +168,7 @@
         </div>
     </div>
 
+    <!-- RIGHT PANEL -->
     <div>
         <div class="card">
             <h2 id="basketHeader">Live Basket (0)</h2>
@@ -173,6 +191,12 @@
     let basket = [];
     let theme = localStorage.getItem('commander_theme') || 'light';
 
+    // Base conversion rates to Malawi Kwacha (MK)
+    const EXCHANGE_RATES = {
+        USD: 1730, // 1 USD = 1,730 MK
+        ZAR: 95    // 1 ZAR = 95 MK
+    };
+
     window.onload = () => { 
         applyTheme(); 
         checkMonthlyRollover();
@@ -183,14 +207,30 @@
         navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
 
-    // FEATURE 4: AUTOMATED MONTHLY ROLLOVER
+    // Real-time Conversion Engine
+    function convertCurrency() {
+        const foreignAmtInput = document.getElementById('foreignAmt');
+        const currencySelect = document.getElementById('foreignCurrency');
+        const localAmtInput = document.getElementById('amt');
+
+        const foreignAmount = parseFloat(foreignAmtInput.value);
+        const selectedCurrency = currencySelect.value;
+
+        if (!isNaN(foreignAmount) && foreignAmount > 0) {
+            // Calculate and round off to the nearest Kwacha
+            const convertedValue = Math.round(foreignAmount * EXCHANGE_RATES[selectedCurrency]);
+            localAmtInput.value = convertedValue;
+        } else {
+            localAmtInput.value = '';
+        }
+    }
+
     function checkMonthlyRollover() {
         const now = new Date();
-        const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`; // e.g., "2026-6"
+        const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`; 
         const lastCheckedMonth = localStorage.getItem('commander_last_month');
 
         if (lastCheckedMonth && lastCheckedMonth !== currentMonthKey) {
-            // Month has rolled over! Find entries from the previous checked month
             const parsedLastMonth = lastCheckedMonth.split('-');
             const oldYear = parseInt(parsedLastMonth[0]);
             const oldMonth = parseInt(parsedLastMonth[1]);
@@ -204,21 +244,29 @@
                 const totalSpent = lastMonthEntries.reduce((s, e) => s + e.amt, 0);
                 const monthName = new Date(oldYear, oldMonth).toLocaleString('default', { month: 'long' });
                 
-                // Save old total to archives
                 archives[`${monthName} ${oldYear}`] = totalSpent;
                 localStorage.setItem('commander_v4_archives', JSON.stringify(archives));
             }
             
-            alert("📅 Welcome to a new month! Your previous budget cycle has been archived automatically.");
+            alert("Welcome to a new month! Your previous budget cycle has been archived automatically.");
         }
         localStorage.setItem('commander_last_month', currentMonthKey);
     }
 
     function addToBasket() {
         const a = document.getElementById('amt'), d = document.getElementById('desc');
+        const foreignAmtInput = document.getElementById('foreignAmt');
+        
         if (!a.value || a.value <= 0) return;
+        
         basket.push({ id: Date.now(), amt: parseFloat(a.value), desc: d.value || "General Item" });
-        a.value = ''; d.value = ''; updateUI();
+        
+        // Clear all deployment inputs
+        a.value = ''; 
+        d.value = '';
+        foreignAmtInput.value = ''; 
+        
+        updateUI();
     }
 
     function checkout() {
@@ -228,13 +276,11 @@
         basket = []; updateUI();
     }
 
-    // FEATURE 3: EXPORT TO EXCEL/CSV
     function exportToCSV() {
         if(entries.length === 0) { alert("No history data to export."); return; }
         let csvContent = "data:text/csv;charset=utf-8,Description,Amount (MK),Date\n";
         entries.forEach(e => {
             const dateStr = new Date(e.timestamp).toLocaleDateString();
-            // Clean description text to ensure columns stay intact
             const cleanDesc = e.desc.replace(/,/g, "");
             csvContent += `${cleanDesc},${e.amt},${dateStr}\n`;
         });
@@ -247,7 +293,6 @@
         document.body.removeChild(link);
     }
 
-    // FEATURE 3: IMPORT BACKUP SYSTEM
     function importBackup(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -291,7 +336,6 @@
         const percent = Math.min(100, Math.max(0, (spentThisMonth / goal) * 100));
         document.getElementById('progBar').style.width = percent + '%';
 
-        // Update Archive Scoreboard text
         let archiveHtml = "<b>Past Performance:</b><br>";
         const keys = Object.keys(archives);
         if(keys.length === 0) archiveHtml += "No archived months yet.";
@@ -301,7 +345,7 @@
         document.getElementById('basketList').innerHTML = basket.map(i => `
             <div class="item-row">
                 <div class="item-info"><span>${i.desc}</span><small>MK ${i.amt.toLocaleString()}</small></div>
-                <button class="del-btn" onclick="basket = basket.filter(x => x.id !== ${i.id}); updateUI();">✕</button>
+                <button class="del-btn" onclick="basket = basket.filter(x => x.id !== ${i.id}); updateUI();">X</button>
             </div>`).join('') || '<p style="opacity:0.4; text-align:center; font-size:0.9rem;">Basket is empty</p>';
 
         document.getElementById('historyList').innerHTML = entries.slice(0, 12).map(e => `
