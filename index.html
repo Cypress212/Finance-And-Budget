@@ -9,24 +9,24 @@
     <title>Commander MK Pro</title>
 
     <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2454/2454282.png">
+    <link class="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2454/2454282.png">
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        /* Default Light Theme Configuration */
+        /* Tweaked Light Theme Parameters */
         :root {
-            --bg: #fdfcf8;
-            --card: #ffffff;
-            --border: rgba(0, 0, 0, 0.08);
-            --accent: #10b981;
-            --text-main: #1e293b;
-            --text-dim: #64748b;
-            --danger: #ef4444;
-            --shadow: rgba(0, 0, 0, 0.04);
+            --bg: #f1f5f9;          /* Crisp, premium slate-tinted off-white */
+            --card: #ffffff;        /* Pure white for sharp card contrast */
+            --border: #e2e8f0;      /* Clean, defined borders */
+            --accent: #059669;      /* Slightly deeper, highly legible premium emerald */
+            --text-main: #0f172a;   /* Deep slate for pristine readability */
+            --text-dim: #64748b;    /* Balanced secondary text */
+            --danger: #dc2626;      /* Vivid alert crimson */
+            --shadow: rgba(15, 23, 42, 0.05) 0px 10px 15px -3px, rgba(15, 23, 42, 0.02) 0px 4px 6px -2px;
         }
 
-        /* Explicit Selector - Forces the dark theme override regardless of browser interpretation */
+        /* Dark Theme Parameters */
         html[data-theme="dark"] {
             --bg: #0f172a;
             --card: #1e293b;
@@ -42,7 +42,7 @@
             font-family: system-ui, -apple-system, sans-serif;
             background-color: var(--bg);
             color: var(--text-main);
-            transition: background 0.3s ease;
+            transition: background 0.3s ease, color 0.3s ease;
             display: flex; justify-content: center;
         }
 
@@ -62,9 +62,10 @@
             border: 1px solid var(--border);
             border-radius: 24px;
             padding: 24px;
-            box-shadow: 0 4px 12px var(--shadow);
+            box-shadow: var(--shadow);
             width: 100%;
             overflow: hidden;
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.2px; margin: 0 0 15px 0; color: var(--text-dim); }
@@ -75,7 +76,7 @@
             margin-bottom: 12px; border-radius: 16px; background: var(--bg);
             color: var(--text-main); font-size: 16px; outline: none; transition: 0.2s;
         }
-        input:focus, select:focus { border-color: var(--accent); }
+        input:focus, select:focus { border-color: var(--accent); background: var(--card); }
 
         .currency-row {
             display: grid;
@@ -95,6 +96,7 @@
             background: var(--bg); color: var(--text-main); 
             border: 1px solid var(--border); padding: 12px; font-size: 0.8rem; margin-bottom: 8px;
         }
+        .btn-secondary:hover { background: var(--card); }
 
         .item-row {
             display: flex; justify-content: space-between; align-items: center;
@@ -138,7 +140,6 @@
 
         <div class="card" style="margin-top: 20px;">
             <h2>Deployment</h2>
-            
             <div class="currency-row">
                 <select id="foreignCurrency" onchange="convertCurrency()">
                     <option value="USD">USD</option>
@@ -146,7 +147,6 @@
                 </select>
                 <input type="number" id="foreignAmt" placeholder="Foreign Amount" inputmode="decimal" oninput="convertCurrency()">
             </div>
-
             <input type="number" id="amt" placeholder="Amount (MK)" inputmode="decimal">
             <input type="text" id="desc" placeholder="Item/Description">
             <button class="btn btn-primary" onclick="addToBasket()">Add to Basket</button>
@@ -205,7 +205,6 @@
         navigator.serviceWorker.register('./sw.js')
         .then((reg) => {
             reg.update();
-            console.log("Service worker secure");
         })
         .catch(err => console.log("Worker failed", err));
     }
@@ -355,6 +354,7 @@
             </div>`).join('');
     }
 
+    // Remember to clear browser data after deploying to clear out cache layers!
     function clearHistory() { if(confirm("Wipe all data?")) { entries = []; localStorage.setItem('commander_v4_ledger', "[]"); updateUI(); } }
     function applyTheme() { document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeBtn').innerText = theme === 'light' ? '🌙' : '☀️'; }
     function toggleTheme() { theme = (theme === 'light') ? 'dark' : 'light'; localStorage.setItem('commander_theme', theme); applyTheme(); }
