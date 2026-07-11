@@ -201,14 +201,14 @@
         updateUI(); 
     };
 
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-        .then((reg) => {
-            reg.update();
-        })
-        .catch(err => console.log("Worker failed", err));
-    }
-
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js?ver=6.0.0')
+    .then((reg) => {
+        reg.update();
+        console.log("System ledger cache-busted version 6 active");
+    })
+    .catch(err => console.log("Worker connection error:", err));
+}
     function convertCurrency() {
         const foreignAmtInput = document.getElementById('foreignAmt');
         const currencySelect = document.getElementById('foreignCurrency');
