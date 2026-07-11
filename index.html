@@ -9,24 +9,22 @@
     <title>Commander MK Pro</title>
 
     <link rel="manifest" href="./manifest.json">
-    <link class="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2454/2454282.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2454/2454282.png">
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        /* Tweaked Light Theme Parameters */
         :root {
-            --bg: #f1f5f9;          /* Crisp, premium slate-tinted off-white */
-            --card: #ffffff;        /* Pure white for sharp card contrast */
-            --border: #e2e8f0;      /* Clean, defined borders */
-            --accent: #059669;      /* Slightly deeper, highly legible premium emerald */
-            --text-main: #0f172a;   /* Deep slate for pristine readability */
-            --text-dim: #64748b;    /* Balanced secondary text */
-            --danger: #dc2626;      /* Vivid alert crimson */
+            --bg: #f1f5f9;          
+            --card: #ffffff;        
+            --border: #e2e8f0;      
+            --accent: #059669;      
+            --text-main: #0f172a;   
+            --text-dim: #64748b;    
+            --danger: #dc2626;      
             --shadow: rgba(15, 23, 42, 0.05) 0px 10px 15px -3px, rgba(15, 23, 42, 0.02) 0px 4px 6px -2px;
         }
 
-        /* Dark Theme Parameters */
         html[data-theme="dark"] {
             --bg: #0f172a;
             --card: #1e293b;
@@ -130,6 +128,7 @@
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
 <div class="dashboard">
+    <!-- LEFT PANEL -->
     <div class="sticky-side">
         <div class="card" style="border-top: 5px solid var(--accent);">
             <h2>Daily Budget Left</h2>
@@ -163,11 +162,15 @@
                 <button class="btn btn-secondary" onclick="exportToCSV()">Export CSV</button>
                 <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">Import Backup</button>
             </div>
+            <!-- Native Download Hook Button -->
+            <button class="btn btn-primary" id="installBtn" style="display: none; width: 100%; margin-top: 5px; background: #2563eb;" onclick="triggerAppInstallation()">Install Application</button>
+            
             <input type="file" id="fileInput" style="display:none" accept=".json" onchange="importBackup(event)">
             <div id="archiveScoreboard" style="margin-top: 15px; font-size: 0.75rem; color: var(--text-dim);"></div>
         </div>
     </div>
 
+    <!-- RIGHT PANEL -->
     <div>
         <div class="card">
             <h2 id="basketHeader">Live Basket (0)</h2>
@@ -189,11 +192,9 @@
     let archives = JSON.parse(localStorage.getItem('commander_v4_archives') || "{}");
     let basket = [];
     let theme = localStorage.getItem('commander_theme') || 'light';
+    let systemInstallationPrompt = null;
 
-    const EXCHANGE_RATES = {
-        USD: 1730, 
-        ZAR: 95    
-    };
+    const EXCHANGE_RATES = { USD: 1730, ZAR: 95 };
 
     window.onload = () => { 
         applyTheme(); 
@@ -201,25 +202,55 @@
         updateUI(); 
     };
 
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js?ver=6.0.0')
-    .then((reg) => {
-        reg.update();
-        console.log("System ledger cache-busted version 6 active");
-    })
-    .catch(err => console.log("Worker connection error:", err));
-}
+    // Service Worker Registration Setup
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js?ver=6.0.1')
+        .then((reg) => { reg.update(); })
+        .catch(err => console.log("Worker connection error", err));
+    }
+
+    /* Programmatic Installation Capture System for PC and Mobile Devices */
+    window.addEventListener('beforeinstallprompt', (event) => {
+        // Prevent the default browser banner execution
+        event.preventDefault();
+        // Save the event sequence pipeline
+        systemInstallationPrompt = event;
+        // Unhide our customized visual button block
+        const uiInstallButton = document.getElementById('installBtn');
+        if (uiInstallButton) {
+            uiInstallButton.style.display = 'block';
+        }
+    });
+
+    function triggerAppInstallation() {
+        if (!systemInstallationPrompt) return;
+        // Launch native operating system confirmation panel
+        systemInstallationPrompt.prompt();
+        systemInstallationPrompt.userChoice.then((choice) => {
+            if (choice.outcome === 'accepted') {
+                console.log('User installed the system controller');
+            }
+            // Dismiss active tracking token variable
+            systemInstallationPrompt = null;
+            document.getElementById('installBtn').style.display = 'none';
+        });
+    }
+
+    // Hide installation interface if operation completes successfully via external native prompt
+    window.addEventListener('appinstalled', () => {
+        document.getElementById('installBtn').style.display = 'none';
+        systemInstallationPrompt = null;
+    });
+
     function convertCurrency() {
         const foreignAmtInput = document.getElementById('foreignAmt');
         const currencySelect = document.getElementById('foreignCurrency');
         const localAmtInput = document.getElementById('amt');
-
         const foreignAmount = parseFloat(foreignAmtInput.value);
         const selectedCurrency = currencySelect.value;
 
         if (!isNaN(foreignAmount) && foreignAmount > 0) {
-            const convertedValue = Math.round(foreignAmount * EXCHANGE_RATES[selectedCurrency]);
-            localAmtInput.value = convertedValue;
+            localAmtInput.value = Math.round(foreignAmount * EXCHANGE_RATES[selectedCurrency]);
         } else {
             localAmtInput.value = '';
         }
@@ -234,7 +265,6 @@ if ('serviceWorker' in navigator) {
             const parsedLastMonth = lastCheckedMonth.split('-');
             const oldYear = parseInt(parsedLastMonth[0]);
             const oldMonth = parseInt(parsedLastMonth[1]);
-
             const lastMonthEntries = entries.filter(e => {
                 const d = new Date(e.timestamp);
                 return d.getFullYear() === oldYear && d.getMonth() === oldMonth;
@@ -243,7 +273,6 @@ if ('serviceWorker' in navigator) {
             if (lastMonthEntries.length > 0) {
                 const totalSpent = lastMonthEntries.reduce((s, e) => s + e.amt, 0);
                 const monthName = new Date(oldYear, oldMonth).toLocaleString('default', { month: 'long' });
-                
                 archives[`${monthName} ${oldYear}`] = totalSpent;
                 localStorage.setItem('commander_v4_archives', JSON.stringify(archives));
             }
@@ -257,10 +286,7 @@ if ('serviceWorker' in navigator) {
         if (!a.value || a.value <= 0) return;
         
         basket.push({ id: Date.now(), amt: parseFloat(a.value), desc: d.value || "General Item" });
-        
-        a.value = ''; 
-        d.value = '';
-        foreignAmtInput.value = ''; 
+        a.value = ''; d.value = ''; foreignAmtInput.value = ''; 
         updateUI();
     }
 
@@ -272,20 +298,15 @@ if ('serviceWorker' in navigator) {
     }
 
     function exportToCSV() {
-        if(entries.length === 0) { alert("No history data to export."); return; }
+        if(entries.length === 0) { alert("No history data."); return; }
         let csvContent = "data:text/csv;charset=utf-8,Description,Amount (MK),Date\n";
         entries.forEach(e => {
-            const dateStr = new Date(e.timestamp).toLocaleDateString();
-            const cleanDesc = e.desc.replace(/,/g, "");
-            csvContent += `${cleanDesc},${e.amt},${dateStr}\n`;
+            csvContent += `${e.desc.replace(/,/g, "")},${e.amt},${new Date(e.timestamp).toLocaleDateString()}\n`;
         });
-        const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `wealth_commander_backup_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        link.setAttribute("href", encodeURI(csvContent));
+        link.setAttribute("download", `wealth_commander_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
     function importBackup(event) {
@@ -299,8 +320,8 @@ if ('serviceWorker' in navigator) {
                     entries = importedData;
                     localStorage.setItem('commander_v4_ledger', JSON.stringify(entries));
                     updateUI();
-                    alert("System ledger updated successfully from backup file!");
-                } else { alert("Invalid backup format."); }
+                    alert("System ledger updated!");
+                }
             } catch (err) { alert("Could not read backup file."); }
         };
         reader.readAsText(file);
@@ -315,9 +336,7 @@ if ('serviceWorker' in navigator) {
 
         const basketTotal = basket.reduce((s, e) => s + e.amt, 0);
         const daysLeft = (new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()) + 1;
-        
-        const dailyAllowance = (goal - spentThisMonth) / daysLeft;
-        const finalDaily = Math.floor(dailyAllowance - basketTotal);
+        const finalDaily = Math.floor(((goal - spentThisMonth) / daysLeft) - basketTotal);
 
         const display = document.getElementById('dailyDisplay');
         display.innerText = finalDaily.toLocaleString();
@@ -328,18 +347,13 @@ if ('serviceWorker' in navigator) {
         document.getElementById('payBtn').style.display = basket.length > 0 ? 'block' : 'none';
         document.getElementById('mathLabel').innerText = `MK ${(goal - spentThisMonth).toLocaleString()} left this month • ${daysLeft} days remaining`;
 
-        const percent = Math.min(100, Math.max(0, (spentThisMonth / goal) * 100));
-        document.getElementById('progBar').style.width = percent + '%';
+        document.getElementById('progBar').style.width = Math.min(100, Math.max(0, (spentThisMonth / goal) * 100)) + '%';
 
         let archiveHtml = "<b>Past Performance:</b><br>";
-        const keys = Object.keys(archives);
-        if(keys.length === 0) archiveHtml += "No archived months yet.";
-        keys.forEach(k => { 
-            const val = archives[k];
-            const formattedVal = (typeof val === 'number') ? val.toLocaleString() : parseFloat(val || 0).toLocaleString();
-            archiveHtml += `• ${k}: MK ${formattedVal}<br>`; 
+        Object.keys(archives).forEach(k => { 
+            archiveHtml += `• ${k}: MK ${parseFloat(archives[k] || 0).toLocaleString()}<br>`; 
         });
-        document.getElementById('archiveScoreboard').innerHTML = archiveHtml;
+        document.getElementById('archiveScoreboard').innerHTML = archiveHtml || "No archived months yet.";
 
         document.getElementById('basketList').innerHTML = basket.map(i => `
             <div class="item-row">
@@ -354,7 +368,6 @@ if ('serviceWorker' in navigator) {
             </div>`).join('');
     }
 
-    // Remember to clear browser data after deploying to clear out cache layers!
     function clearHistory() { if(confirm("Wipe all data?")) { entries = []; localStorage.setItem('commander_v4_ledger', "[]"); updateUI(); } }
     function applyTheme() { document.documentElement.setAttribute('data-theme', theme); document.getElementById('themeBtn').innerText = theme === 'light' ? '🌙' : '☀️'; }
     function toggleTheme() { theme = (theme === 'light') ? 'dark' : 'light'; localStorage.setItem('commander_theme', theme); applyTheme(); }
